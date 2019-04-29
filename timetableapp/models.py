@@ -7,6 +7,8 @@ import datetime
 start_year = 1900
 current_year = datetime.datetime.now().year
 future_diff = 5
+maxLessonsADay = 5
+workDays = [0, 1, 2, 3, 4, 5]
 
 class Faculty(models.Model):
     name = models.CharField(
@@ -118,11 +120,11 @@ class Teacher(models.Model):
         null=True,
         blank=True,
     )
-    workTime = models.BigIntegerField(
-        verbose_name=_('Work time'),
-        default=2**60,
-        validators=[MinValueValidator(0), MaxValueValidator(2**60)]
-    )
+    #~ workTime = models.BigIntegerField(
+        #~ verbose_name=_('Work time'),
+        #~ default=2**60,
+        #~ validators=[MinValueValidator(0), MaxValueValidator(2**60)]
+    #~ )
 
     def __str__(self):
         return '%s' % self.person
@@ -271,23 +273,6 @@ class Group(models.Model):
             raise ValidationError(_("Duplicate group"))
         super(Group, self).validate_unique(exclude)
 
-    def __str__(self):
-        number = []
-        if self.number:
-            number.append(self.number)
-        parent = self.parentId
-        while parent is not None:
-            if parent.number is not None:
-                number.append(parent.number)
-            parent = parent.parentId
-        args = (
-            self.specialty.abbreviation,
-            str(self.year % 100),
-            self.state.suffix,
-            ''.join('-%s' % i for i in reversed(number)),
-        )
-        return '%s-%s%s%s' % args
-
     def getRootPath(self):
         arr = []
         p = self.parentId
@@ -315,12 +300,85 @@ class Group(models.Model):
             p = p.parentId
         return False
 
+    def __str__(self):
+        number = []
+        if self.number:
+            number.append(self.number)
+        parent = self.parentId
+        while parent is not None:
+            if parent.number is not None:
+                number.append(parent.number)
+            parent = parent.parentId
+        args = (
+            self.specialty.abbreviation,
+            str(self.year % 100),
+            self.state.suffix,
+            ''.join('-%s' % i for i in reversed(number)),
+        )
+        return '%s-%s%s%s' % args
+
     class Meta:
         verbose_name = _('Group')
         verbose_name_plural = _('Groups')
         unique_together = [[
             'specialty', 'year', 'state', 'parentId', 'number'
         ]]
+
+class Building(models.Model):
+    number = models.PositiveSmallIntegerField(
+        verbose_name=_('Number'),
+        unique=True,
+    )
+    address = models.CharField(
+        verbose_name=_('Address'),
+        max_length=128,
+        unique=True,
+        default=None,
+        blank=True,
+        null=True,
+    )
+    longitude = models.DecimalField(
+        verbose_name=_('Longitude'),
+        max_digits=9,
+        decimal_places=6,
+        default=None,
+        blank=True,
+        null=True,
+    )
+    latitude = models.DecimalField(
+        verbose_name=_('Longitude'),
+        max_digits=9,
+        decimal_places=6,
+        default=None,
+        blank=True,
+        null=True,
+    )
+
+    def __str__(self):
+        return _('{building} building').format(building=self.number)
+
+    class Meta:
+        verbose_name = _('Building')
+        verbose_name_plural = _('Buildings')
+
+
+class Classroom(models.Model):
+    building = models.ForeignKey(
+        Building,
+        on_delete=models.CASCADE,
+        verbose_name=_('Building'),
+    )
+    number = models.PositiveSmallIntegerField(
+        verbose_name=_('Number'),
+        unique=True,
+    )
+
+    def __str__(self):
+        return '%s/%s' % (self.building.number, self.number)
+
+    class Meta:
+        verbose_name = _('Classroom')
+        verbose_name_plural = _('Classrooms')
 
 class Curriculum(models.Model):
     group = models.ForeignKey(
@@ -540,9 +598,18 @@ class SemesterSchedule(models.Model):
         default=0,
     )
 
-    weeks = models.PositiveSmallIntegerField(
-        verbose_name=_('Number of weeks'),
-        default=0,
+    startDate = models.DateField(
+        verbose_name=_('Start date'),
+        default=None,
+        blank=True,
+        null=True,
+    )
+
+    endDate = models.DateField(
+        verbose_name=_('End date'),
+        default=None,
+        blank=True,
+        null=True,
     )
 
     def clean(self):
@@ -556,6 +623,9 @@ class SemesterSchedule(models.Model):
             if self.semester > self.group.state.semesters:
                 msg = _("Semester can't be more that number of semesters in group")
                 raise ValidationError(msg)
+        if self.startDate and self.endDate and self.startDate > self.endDate:
+            msg = _("End date should be greater than start date.")
+            raise ValidationError(msg)
         super(SemesterSchedule, self).clean()
 
     def __str__(self):
@@ -578,13 +648,12 @@ class TimetableEntry(models.Model):
             _('sat'), _('sun')
         )
         msg = _('{lesson} lesson')
-        k = 1
-        for i in weeks:
-            for j in days:
-                for k in range(1, 9):
+        for ik, iv in enumerate(weeks):
+            for j in workDays:
+                for k in range(1, maxLessonsADay + 1):
                     l = msg.format(lesson=k)
-                    arr.append((k, '%s - %s - %s' % (i, j, l)))
-                    k += 1
+                    val = ik * 256 + j * 32 + k
+                    arr.append((val, '%s - %s - %s' % (iv, days[j], l)))
         return arr
 
     LESSON_CHOICES = generateLessonChoices()
@@ -605,6 +674,24 @@ class TimetableEntry(models.Model):
         verbose_name=_('Number of lesson'),
         choices=LESSON_CHOICES,
         default=0,
+    )
+
+    classroom = models.ForeignKey(
+        Classroom,
+        on_delete=models.CASCADE,
+        verbose_name=_('Classroom'),
+        default=None,
+        null=True,
+        blank=True,
+    )
+
+    teacher = models.ForeignKey(
+        Teacher,
+        on_delete=models.CASCADE,
+        verbose_name=_('Teacher'),
+        default=None,
+        null=True,
+        blank=True,
     )
 
     def clean(self):
@@ -650,5 +737,7 @@ class TimetableEntry(models.Model):
 
     class Meta:
         verbose_name = _('Timetable entry')
-        verbose_name_plural = _('Timetable')
-        unique_together = [['entry', 'group', 'lesson']]
+        verbose_name_plural = _('Timetable entries')
+        unique_together = [
+            ['entry', 'group', 'lesson'], ['lesson', 'classroom']
+        ]

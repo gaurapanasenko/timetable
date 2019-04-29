@@ -8,6 +8,8 @@ from .models import Teacher
 from .models import Specialty
 from .models import GroupState
 from .models import Group
+from .models import Building
+from .models import Classroom
 from .models import Curriculum
 from .models import CurriculumEntry
 from .models import SemesterSchedule
@@ -58,6 +60,10 @@ admin.site.register(Specialty)
 admin.site.register(GroupState)
 
 admin.site.register(Group, GroupAdmin)
+
+admin.site.register(Building)
+
+admin.site.register(Classroom)
 
 admin.site.register(Curriculum, CurriculumAdmin)
 
