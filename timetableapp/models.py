@@ -10,12 +10,12 @@ future_diff = 5
 
 class Faculty(models.Model):
     name = models.CharField(
-        verbose_name=_("Name"),
+        verbose_name=_('Name'),
         max_length=128,
         unique=True,
     )
     abbreviation = models.CharField(
-        verbose_name=_("Abbreviation"),
+        verbose_name=_('Abbreviation'),
         max_length=128,
         unique=True,
         blank=True,
@@ -27,22 +27,22 @@ class Faculty(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = _("Faculty")
-        verbose_name_plural = _("Faculties")
+        verbose_name = _('Faculty')
+        verbose_name_plural = _('Faculties')
 
 class Department(models.Model):
     faculty = models.ForeignKey(
         Faculty,
         on_delete=models.PROTECT,
-        verbose_name=_("Faculty"),
+        verbose_name=_('Faculty'),
     )
     name = models.CharField(
-        verbose_name=_("Name"),
+        verbose_name=_('Name'),
         max_length=128,
         unique=True,
     )
     abbreviation = models.CharField(
-        verbose_name=_("Abbreviation"),
+        verbose_name=_('Abbreviation'),
         max_length=128,
         unique=True,
         blank=True,
@@ -54,19 +54,19 @@ class Department(models.Model):
         return self.abbreviation if self.abbreviation else self.name
 
     class Meta:
-        verbose_name = _("Department")
-        verbose_name_plural = _("Departments")
+        verbose_name = _('Department')
+        verbose_name_plural = _('Departments')
 
 class Subject(models.Model):
     name = models.CharField(
-        verbose_name=_("Name"),
+        verbose_name=_('Name'),
         max_length=128,
         unique=True,
     )
     department = models.ForeignKey(
         Department,
         on_delete=models.PROTECT,
-        verbose_name=_("Department"),
+        verbose_name=_('Department'),
         default=None,
         null=True,
         blank=True,
@@ -76,73 +76,73 @@ class Subject(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = _("Subject")
-        verbose_name_plural = _("Subjects")
+        verbose_name = _('Subject')
+        verbose_name_plural = _('Subjects')
 
 class Person(models.Model):
     firstName = models.CharField(
-        verbose_name=_("First name"),
+        verbose_name=_('First name'),
         max_length=128,
     )
 
     middleName = models.CharField(
-        verbose_name=_("Middle name"),
+        verbose_name=_('Middle name'),
         max_length=128,
     )
 
     lastName = models.CharField(
-        verbose_name=_("Last name"),
+        verbose_name=_('Last name'),
         max_length=128,
     )
 
     def __str__(self):
         args = (self.firstName, self.middleName, self.lastName)
-        return "%s %s %s" % args
+        return '%s %s %s' % args
 
     class Meta:
-        verbose_name = _("Person")
-        verbose_name_plural = _("Persons")
+        verbose_name = _('Person')
+        verbose_name_plural = _('Persons')
         unique_together = [['firstName', 'middleName', 'lastName']]
 
 class Teacher(models.Model):
     person = models.ForeignKey(
         Person,
         on_delete=models.PROTECT,
-        verbose_name=_("Person"),
+        verbose_name=_('Person'),
     )
     department = models.ForeignKey(
         Department,
         on_delete=models.PROTECT,
-        verbose_name=_("Department"),
+        verbose_name=_('Department'),
         default=None,
         null=True,
         blank=True,
     )
     workTime = models.BigIntegerField(
-        verbose_name=_("Work time"),
+        verbose_name=_('Work time'),
         default=2**60,
         validators=[MinValueValidator(0), MaxValueValidator(2**60)]
     )
 
     def __str__(self):
-        return "%s" % self.person
+        return '%s' % self.person
 
     class Meta:
-        verbose_name = _("Teacher")
-        verbose_name_plural = _("Teachers")
+        verbose_name = _('Teacher')
+        verbose_name_plural = _('Teachers')
 
 class Specialty(models.Model):
     number = models.PositiveSmallIntegerField(
-        verbose_name=_("Number"),
+        verbose_name=_('Number'),
         unique=True,
     )
     name = models.CharField(
-        verbose_name=_("Name"),
+        verbose_name=_('Name'),
         max_length=128,
         unique=True,
     )
     abbreviation = models.CharField(
-        verbose_name=_("Abbreviation"),
+        verbose_name=_('Abbreviation'),
         max_length=50,
         unique=True,
     )
@@ -151,27 +151,27 @@ class Specialty(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = _("Specialty")
-        verbose_name_plural = _("Specialties")
+        verbose_name = _('Specialty')
+        verbose_name_plural = _('Specialties')
 
 class GroupState(models.Model):
     name = models.CharField(
-        verbose_name=_("Name"),
+        verbose_name=_('Name'),
         max_length=128,
         unique=True,
     )
     suffix = models.CharField(
-        verbose_name=_("Suffix"),
+        verbose_name=_('Suffix'),
         max_length=16,
         blank=True,
         unique=True,
     )
     semesters = models.PositiveSmallIntegerField(
-        verbose_name=_("Number of semesters"),
+        verbose_name=_('Number of semesters'),
         default=8,
     )
     priority = models.PositiveSmallIntegerField(
-        verbose_name=_("Priority"),
+        verbose_name=_('Priority'),
         choices=((x, x) for x in range(1,10)),
         default=5,
     )
@@ -180,8 +180,9 @@ class GroupState(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = _("Group state")
-        verbose_name_plural = _("Group states")
+        verbose_name = _('Group state')
+        verbose_name_plural = _('Group states')
+        ordering = ('priority', 'name',)
 
 class Group(models.Model):
     def generateYearsChoices():
@@ -189,7 +190,7 @@ class Group(models.Model):
         return ((x, x) for x in r)
 
     def generateNumberChoices():
-        l = [(None,"-")]
+        l = [(None,'-')]
         for x in range(1, 9):
             l.append((x, x))
         return l
@@ -201,29 +202,29 @@ class Group(models.Model):
     specialty = models.ForeignKey(
         Specialty,
         on_delete=models.PROTECT,
-        verbose_name=_("Specialty"),
+        verbose_name=_('Specialty'),
     )
     year = models.PositiveSmallIntegerField(
-        verbose_name=_("Year"),
+        verbose_name=_('Year'),
         choices=YEARS_CHOICES,
         default=current_year,
     )
     state = models.ForeignKey(
         GroupState,
         on_delete=models.PROTECT,
-        verbose_name=_("State"),
-        default={"priority": 1},
+        verbose_name=_('State'),
+        default={'priority': 1},
     )
     parentId = models.ForeignKey(
-        "self",
+        'self',
         on_delete=models.CASCADE,
-        verbose_name=_("Parent group class"),
+        verbose_name=_('Parent group class'),
         default=None,
         blank=True,
         null=True,
     )
     number = models.PositiveSmallIntegerField(
-        verbose_name=_("Number"),
+        verbose_name=_('Number'),
         choices=NUMBER_CHOICES,
         default=None,
         blank=True,
@@ -260,11 +261,11 @@ class Group(models.Model):
         try: specialty = self.specialty
         except Specialty.DoesNotExist as e: pass
         args = {
-            "specialty": specialty,
-            "year": self.year,
-            "state": self.state,
-            "parentId": self.parentId,
-            "number": self.number,
+            'specialty': specialty,
+            'year': self.year,
+            'state': self.state,
+            'parentId': self.parentId,
+            'number': self.number,
         }
         if Group.objects.exclude(id=self.id).filter(**args).exists():
             raise ValidationError(_("Duplicate group"))
@@ -283,9 +284,9 @@ class Group(models.Model):
             self.specialty.abbreviation,
             str(self.year % 100),
             self.state.suffix,
-            "".join("-%s" % i for i in reversed(number)),
+            ''.join('-%s' % i for i in reversed(number)),
         )
-        return "%s-%s%s%s" % args
+        return '%s-%s%s%s' % args
 
     def getRootPath(self):
         arr = []
@@ -315,125 +316,162 @@ class Group(models.Model):
         return False
 
     class Meta:
-        verbose_name = _("Group")
-        verbose_name_plural = _("Groups")
+        verbose_name = _('Group')
+        verbose_name_plural = _('Groups')
         unique_together = [[
             'specialty', 'year', 'state', 'parentId', 'number'
         ]]
 
-class CurriculumEntry(models.Model):
+class Curriculum(models.Model):
     group = models.ForeignKey(
         Group,
         on_delete=models.CASCADE,
-        verbose_name=_("Group"),
+        verbose_name=_('Group'),
     )
     semester = models.PositiveSmallIntegerField(
-        verbose_name=_("Semester"),
+        verbose_name=_('Semester'),
+    )
+
+    def clean(self):
+        group = None
+        try: group = self.group
+        except Group.DoesNotExist as e: pass
+        if group:
+            if group.parentId is not None:
+                msg = _("Curriculum can be only on root group")
+                raise ValidationError(msg)
+            max_semester = group.state.semesters
+            if self.semester > max_semester:
+                msg = _("Can't create semester more than {} for this group")
+                raise ValidationError(msg.format(max_semester))
+        super(Curriculum, self).clean()
+
+    def __str__(self):
+        s = _('{semester} semester')
+        string = s.format(semester=self.semester)
+        return '%s - %s' % (self.group, string)
+
+    class Meta:
+        verbose_name = _('Curriculum')
+        verbose_name_plural = _('Curriculums')
+        unique_together = [['group', 'semester']]
+
+
+class CurriculumEntry(models.Model):
+    curriculum = models.ForeignKey(
+        Curriculum,
+        on_delete=models.CASCADE,
+        verbose_name=_('Curriculum'),
+    )
+    group = models.ForeignKey(
+        Group,
+        on_delete=models.CASCADE,
+        verbose_name=_('Group'),
     )
     subjects = models.ManyToManyField(
         Subject,
         through='CurriculumEntrySubject',
-        verbose_name=_("Subjects"),
+        verbose_name=_('Subjects'),
+        related_name='several_subjects'
     )
     teachers = models.ManyToManyField(
         Teacher,
         through='CurriculumEntryTeacher',
-        verbose_name=_("Teachers"),
+        verbose_name=_('Teachers'),
     )
     lectures = models.PositiveSmallIntegerField(
-        verbose_name=_("Number of lectures"),
+        verbose_name=_('Number of lectures'),
     )
     practices = models.PositiveSmallIntegerField(
-        verbose_name=_("Number of practices"),
+        verbose_name=_('Number of practices'),
     )
     laboratory = models.PositiveSmallIntegerField(
-        verbose_name=_("Number of laboratory"),
+        verbose_name=_('Number of laboratory'),
     )
     independentWork = models.PositiveSmallIntegerField(
-        verbose_name=_("Amount of independent work"),
+        verbose_name=_('Amount of independent work'),
     )
 
     def clean(self):
-        max_semester = self.group.state.semesters
-        if self.semester > max_semester:
-            error = _(
-                'Can\'t create semester more than {} for this group'
-            ).format(max_semester)
-            raise ValidationError(error)
+        curriculum = None
+        group = None
+        try: curriculum = self.curriculum
+        except Curriculum.DoesNotExist as e: pass
+        try: group = self.group
+        except Group.DoesNotExist as e: pass
+        if curriculum and group:
+            pg = curriculum.group
+            if pg != group and not group.isChild(pg):
+                msg = _("Group must be child of or same as group in curriculum")
+                raise ValidationError(msg)
         super(CurriculumEntry, self).clean()
 
-    def validate_unique(self, exclude=None):
-        #~ subject = None
-        #~ group = None
-        #~ try: subjects = self.subjects
-        #~ except Subject.DoesNotExist as e: pass
-        #~ try: group = self.group
-        #~ except Group.DoesNotExist as e: pass
-        #~ arr = []
-        #~ if group is not None:
-            #~ arr = [group] + group.getRootPath() + group.getChilds()
-        #~ args = {
-            #~ "group__in": arr,
-            #~ "semester": self.semester,
-        #~ }
-        #~ f = CurriculumEntry.objects.exclude(id=self.id).filter(**args)
-        #~ if f.exists():
-            #~ msg = _("Duplicate curriculum for subject by group {}.")
-            #~ raise ValidationError(msg.format(f.first().group))
-        super(CurriculumEntry, self).validate_unique(exclude)
+    def getSemester(self):
+        return self.curriculum.semester
+
+    def getSubjectName(self):
+        return '/'.join(str(i) for i in self.subjects.all())
 
     def __str__(self):
-        subjects = "/".join(str(i) for i in self.subjects.all())
-        if subjects:
-            subjects = " - " + subjects
-        args = (self.group, self.semester, subjects)
-        return "%s - %s%s" % args
+        subjects = self.getSubjectName()
+        if subjects: subjects = ' - ' + subjects
+        s = _('{semester} semester')
+        string = s.format(semester=self.getSemester())
+        return '%s - %s%s' % (self.group, string, subjects)
 
     class Meta:
-        verbose_name = _("Curriculum entry")
-        verbose_name_plural = _("Curriculum entries")
+        verbose_name = _('Curriculum entry')
+        verbose_name_plural = _('Curriculum entries')
 
 class CurriculumEntrySubject(models.Model):
     entry = models.ForeignKey(
         CurriculumEntry,
         on_delete=models.CASCADE,
-        verbose_name=_("Curriculum entry"),
+        verbose_name=_('Curriculum entry'),
     )
 
     subject = models.ForeignKey(
         Subject,
         on_delete=models.CASCADE,
-        verbose_name=_("Subject"),
+        verbose_name=_('Subject'),
     )
 
+    def getGroup(self):
+        return self.entry.group
+
+    def getSemester(self):
+        return self.entry.getSemester()
+
     def __str__(self):
-        return "%s" % self.subject
+        s = _('{semester} semester')
+        string = s.format(semester=self.getSemester())
+        return '%s - %s - %s' % (self.getGroup(), string, self.subject)
 
     class Meta:
-        verbose_name = _("Subject for curriculum entry")
-        verbose_name_plural = _("Subjects for curriculum entries")
+        verbose_name = _('Subject for curriculum entry')
+        verbose_name_plural = _('Subjects for curriculum entries')
 
 class CurriculumEntryTeacher(models.Model):
     RESPONSIBILITY_CHOICES = [
-        (0, "Lectures"),
-        (1, "Practices"),
-        (2, "Laboratory"),
+        (0, 'Lectures'),
+        (1, 'Practices'),
+        (2, 'Laboratory'),
     ]
 
     entry = models.ForeignKey(
         CurriculumEntry,
         on_delete=models.CASCADE,
-        verbose_name=_("Curriculum entry"),
+        verbose_name=_('Curriculum entry'),
     )
 
     group = models.ForeignKey(
         Group,
         on_delete=models.CASCADE,
-        verbose_name=_("Group"),
+        verbose_name=_('Group'),
     )
 
     responsibility = models.PositiveSmallIntegerField(
-        verbose_name=_("Responsibility"),
+        verbose_name=_('Responsibility'),
         choices=RESPONSIBILITY_CHOICES,
         default=0,
     )
@@ -441,7 +479,7 @@ class CurriculumEntryTeacher(models.Model):
     teacher = models.ForeignKey(
         Teacher,
         on_delete=models.CASCADE,
-        verbose_name=_("Lecturer"),
+        verbose_name=_('Teacher'),
     )
 
     def clean(self):
@@ -481,11 +519,11 @@ class CurriculumEntryTeacher(models.Model):
         rc = dict(self.RESPONSIBILITY_CHOICES)
         responsibility = rc[self.responsibility]
         args = (self.group, responsibility, self.teacher)
-        return "%s - %s - %s" % args
+        return '%s - %s - %s' % args
 
     class Meta:
-        verbose_name = _("Teacher for curriculum entry")
-        verbose_name_plural = _("Teachers for curriculum entries")
+        verbose_name = _('Teacher for curriculum entry')
+        verbose_name_plural = _('Teachers for curriculum entries')
         unique_together = [[
             'entry', 'group', 'responsibility',
         ]]
@@ -494,16 +532,16 @@ class SemesterSchedule(models.Model):
     group = models.ForeignKey(
         Group,
         on_delete=models.CASCADE,
-        verbose_name=_("Curriculum entry"),
+        verbose_name=_('Group'),
     )
 
     semester = models.PositiveSmallIntegerField(
-        verbose_name=_("Semester"),
+        verbose_name=_('Semester'),
         default=0,
     )
 
     weeks = models.PositiveSmallIntegerField(
-        verbose_name=_("Number of weeks"),
+        verbose_name=_('Number of weeks'),
         default=0,
     )
 
@@ -521,9 +559,96 @@ class SemesterSchedule(models.Model):
         super(SemesterSchedule, self).clean()
 
     def __str__(self):
-        return "%s - %s" % (self.group, self.semester)
+        s = _('{semester} semester')
+        string = s.format(semester=self.semester)
+        return '%s - %s' % (self.group, string)
 
     class Meta:
-        verbose_name = _("Semester schedule")
-        verbose_name_plural = _("Semester schedule")
+        verbose_name = _('Semester schedule')
+        verbose_name_plural = _('Semester schedule')
         unique_together = [['group', 'semester']]
+
+
+class TimetableEntry(models.Model):
+    def generateLessonChoices():
+        arr = []
+        weeks = (_('numerator'), _('denominator'))
+        days = (
+            _('mon'), _('tue'), _('wed'), _('thu'), _('fri'),
+            _('sat'), _('sun')
+        )
+        msg = _('{lesson} lesson')
+        k = 1
+        for i in weeks:
+            for j in days:
+                for k in range(1, 9):
+                    l = msg.format(lesson=k)
+                    arr.append((k, '%s - %s - %s' % (i, j, l)))
+                    k += 1
+        return arr
+
+    LESSON_CHOICES = generateLessonChoices()
+
+    entry = models.ForeignKey(
+        CurriculumEntry,
+        on_delete=models.CASCADE,
+        verbose_name=_('Curriculum entry'),
+    )
+
+    group = models.ForeignKey(
+        Group,
+        on_delete=models.CASCADE,
+        verbose_name=_('Group'),
+    )
+
+    lesson = models.PositiveSmallIntegerField(
+        verbose_name=_('Number of lesson'),
+        choices=LESSON_CHOICES,
+        default=0,
+    )
+
+    def clean(self):
+        entry = None
+        group = None
+        try: entry = self.entry
+        except CurriculumEntry.DoesNotExist as e: pass
+        try: group = self.group
+        except Group.DoesNotExist as e: pass
+        if entry and group:
+            pg = entry.group
+            if pg != group and not group.isChild(pg):
+                msg = _("Group must be child of or same as group in curriculum entry")
+                raise ValidationError(msg)
+        super(TimetableEntry, self).clean()
+
+    def validate_unique(self, exclude=None):
+        entry = None
+        group = None
+        try: entry = self.entry
+        except CurriculumEntry.DoesNotExist as e: pass
+        try: group = self.group
+        except Group.DoesNotExist as e: pass
+        if group:
+            arr = group.getRootPathAndChilds()
+            args = {
+                'entry': entry,
+                'group__in': arr,
+                'lesson': self.lesson,
+            }
+            f = TimetableEntry.objects.exclude(id=self.id).filter(**args)
+            if f.exists():
+                msg = _("Duplicate timetable entry by group {}.")
+                raise ValidationError(msg.format(f.first().group))
+        super(TimetableEntry, self).validate_unique(exclude)
+
+    def __str__(self):
+        msg = _('{semester} semester')
+        semester = msg.format(semester=self.entry.getSemester())
+        lesson = dict(self.LESSON_CHOICES)[self.lesson]
+        args = (str(self.group), semester, lesson, self.entry.getSubjectName())
+        return '%s - %s - %s - %s' % args
+
+    class Meta:
+        verbose_name = _('Timetable entry')
+        verbose_name_plural = _('Timetable')
+        unique_together = [['entry', 'group', 'lesson']]

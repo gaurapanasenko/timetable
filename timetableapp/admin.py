@@ -8,8 +8,18 @@ from .models import Teacher
 from .models import Specialty
 from .models import GroupState
 from .models import Group
+from .models import Curriculum
 from .models import CurriculumEntry
 from .models import SemesterSchedule
+from .models import TimetableEntry
+
+class CurriculumEntryInline(admin.TabularInline):
+    model = CurriculumEntry
+
+class CurriculumAdmin(admin.ModelAdmin):
+    inlines = [
+        CurriculumEntryInline,
+    ]
 
 class CurriculumEntrySubjectInline(admin.TabularInline):
     model = CurriculumEntry.subjects.through
@@ -49,4 +59,8 @@ admin.site.register(GroupState)
 
 admin.site.register(Group, GroupAdmin)
 
+admin.site.register(Curriculum, CurriculumAdmin)
+
 admin.site.register(CurriculumEntry, CurriculumEntryAdmin)
+
+admin.site.register(TimetableEntry)
