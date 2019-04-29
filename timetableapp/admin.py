@@ -9,6 +9,7 @@ from .models import Specialty
 from .models import GroupState
 from .models import Group
 from .models import CurriculumEntry
+from .models import SemesterSchedule
 
 class CurriculumEntrySubjectInline(admin.TabularInline):
     model = CurriculumEntry.subjects.through
@@ -22,6 +23,15 @@ class CurriculumEntryAdmin(admin.ModelAdmin):
         CurriculumEntryTeacherInline,
     ]
     exclude = ('subjects',)
+
+class SemesterScheduleInline(admin.TabularInline):
+    model = SemesterSchedule
+
+class GroupAdmin(admin.ModelAdmin):
+    inlines = [
+        SemesterScheduleInline,
+    ]
+    #exclude = ('subjects',)
 
 admin.site.register(Faculty)
 
@@ -37,6 +47,6 @@ admin.site.register(Specialty)
 
 admin.site.register(GroupState)
 
-admin.site.register(Group)
+admin.site.register(Group, GroupAdmin)
 
 admin.site.register(CurriculumEntry, CurriculumEntryAdmin)

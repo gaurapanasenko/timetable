@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 import datetime
 
 start_year = 1900
@@ -117,6 +118,11 @@ class Teacher(models.Model):
         null=True,
         blank=True,
     )
+    workTime = models.BigIntegerField(
+        verbose_name=_("Work time"),
+        default=2**60,
+        validators=[MinValueValidator(0), MaxValueValidator(2**60)]
+    )
 
     def __str__(self):
         return "%s" % self.person
@@ -215,7 +221,6 @@ class Group(models.Model):
         default=None,
         blank=True,
         null=True,
-
     )
     number = models.PositiveSmallIntegerField(
         verbose_name=_("Number"),
@@ -424,7 +429,7 @@ class CurriculumEntryTeacher(models.Model):
     group = models.ForeignKey(
         Group,
         on_delete=models.CASCADE,
-        verbose_name=_("Subject"),
+        verbose_name=_("Group"),
     )
 
     responsibility = models.PositiveSmallIntegerField(
@@ -484,3 +489,41 @@ class CurriculumEntryTeacher(models.Model):
         unique_together = [[
             'entry', 'group', 'responsibility',
         ]]
+
+class SemesterSchedule(models.Model):
+    group = models.ForeignKey(
+        Group,
+        on_delete=models.CASCADE,
+        verbose_name=_("Curriculum entry"),
+    )
+
+    semester = models.PositiveSmallIntegerField(
+        verbose_name=_("Semester"),
+        default=0,
+    )
+
+    weeks = models.PositiveSmallIntegerField(
+        verbose_name=_("Number of weeks"),
+        default=0,
+    )
+
+    def clean(self):
+        group = None
+        try: group = self.group
+        except Group.DoesNotExist as e: pass
+        if group:
+            if group.parentId is not None:
+                msg = _("Semester schedule can be only on root group")
+                raise ValidationError(msg)
+            if self.semester > self.group.state.semesters:
+                msg = _("Semester can't be more that number of semesters in group")
+                raise ValidationError(msg)
+        super(SemesterSchedule, self).clean()
+
+    def __str__(self):
+        return "%s - %s" % (self.group, self.semester)
+
+    class Meta:
+        verbose_name = _("Semester schedule")
+        verbose_name_plural = _("Semester schedule")
+        unique_together = [['group', 'semester']]
