@@ -4,11 +4,12 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 import datetime
 
-start_year = 1900
+START_YEAR = 1900
+FUTURE_DIFF = 5
+MAX_LESSONS_DAY = 5
+WORK_DAYS = [0, 1, 2, 3, 4, 5]
+MAX_GROUP_TREE_HEIGHT = 3
 current_year = datetime.datetime.now().year
-future_diff = 5
-maxLessonsADay = 5
-workDays = [0, 1, 2, 3, 4, 5]
 
 class Faculty(models.Model):
     name = models.CharField(
@@ -18,11 +19,11 @@ class Faculty(models.Model):
     )
     abbreviation = models.CharField(
         verbose_name=_('Abbreviation'),
-        max_length=128,
+        max_length=16,
+        default=None,
         unique=True,
         blank=True,
         null=True,
-        default=None,
     )
 
     def __str__(self):
@@ -34,7 +35,7 @@ class Faculty(models.Model):
 
 class Department(models.Model):
     faculty = models.ForeignKey(
-        Faculty,
+        'Faculty',
         on_delete=models.PROTECT,
         verbose_name=_('Faculty'),
     )
@@ -45,11 +46,11 @@ class Department(models.Model):
     )
     abbreviation = models.CharField(
         verbose_name=_('Abbreviation'),
-        max_length=128,
+        max_length=16,
+        default=None,
         unique=True,
         blank=True,
         null=True,
-        default=None,
     )
 
     def __str__(self):
@@ -66,7 +67,7 @@ class Subject(models.Model):
         unique=True,
     )
     department = models.ForeignKey(
-        Department,
+        'Department',
         on_delete=models.PROTECT,
         verbose_name=_('Department'),
         default=None,
@@ -108,19 +109,19 @@ class Person(models.Model):
 
 class Teacher(models.Model):
     person = models.ForeignKey(
-        Person,
+        'Person',
         on_delete=models.PROTECT,
         verbose_name=_('Person'),
     )
     department = models.ForeignKey(
-        Department,
+        'Department',
         on_delete=models.PROTECT,
         verbose_name=_('Department'),
         default=None,
         null=True,
         blank=True,
     )
-    #~ workTime = models.BigIntegerField(
+    #~ work_time = models.BigIntegerField(
         #~ verbose_name=_('Work time'),
         #~ default=2**60,
         #~ validators=[MinValueValidator(0), MaxValueValidator(2**60)]
@@ -145,7 +146,7 @@ class Specialty(models.Model):
     )
     abbreviation = models.CharField(
         verbose_name=_('Abbreviation'),
-        max_length=50,
+        max_length=16,
         unique=True,
     )
 
@@ -155,174 +156,6 @@ class Specialty(models.Model):
     class Meta:
         verbose_name = _('Specialty')
         verbose_name_plural = _('Specialties')
-
-class GroupState(models.Model):
-    name = models.CharField(
-        verbose_name=_('Name'),
-        max_length=128,
-        unique=True,
-    )
-    suffix = models.CharField(
-        verbose_name=_('Suffix'),
-        max_length=16,
-        blank=True,
-        unique=True,
-    )
-    semesters = models.PositiveSmallIntegerField(
-        verbose_name=_('Number of semesters'),
-        default=8,
-    )
-    priority = models.PositiveSmallIntegerField(
-        verbose_name=_('Priority'),
-        choices=((x, x) for x in range(1,10)),
-        default=5,
-    )
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = _('Group state')
-        verbose_name_plural = _('Group states')
-        ordering = ('priority', 'name',)
-
-class Group(models.Model):
-    def generateYearsChoices():
-        r = reversed(range(start_year, current_year + 1))
-        return ((x, x) for x in r)
-
-    def generateNumberChoices():
-        l = [(None,'-')]
-        for x in range(1, 9):
-            l.append((x, x))
-        return l
-
-    YEARS_CHOICES = generateYearsChoices()
-
-    NUMBER_CHOICES = generateNumberChoices()
-
-    specialty = models.ForeignKey(
-        Specialty,
-        on_delete=models.PROTECT,
-        verbose_name=_('Specialty'),
-    )
-    year = models.PositiveSmallIntegerField(
-        verbose_name=_('Year'),
-        choices=YEARS_CHOICES,
-        default=current_year,
-    )
-    state = models.ForeignKey(
-        GroupState,
-        on_delete=models.PROTECT,
-        verbose_name=_('State'),
-        default={'priority': 1},
-    )
-    parentId = models.ForeignKey(
-        'self',
-        on_delete=models.CASCADE,
-        verbose_name=_('Parent group class'),
-        default=None,
-        blank=True,
-        null=True,
-    )
-    number = models.PositiveSmallIntegerField(
-        verbose_name=_('Number'),
-        choices=NUMBER_CHOICES,
-        default=None,
-        blank=True,
-        null=True,
-    )
-
-    def clean(self):
-        if self.parentId is not None:
-            p = self.parentId
-            self.specialty = p.specialty
-            self.year = p.year
-            self.state = p.state
-            if self.number is None:
-                error = _(
-                    'Number entries may not be empty ' +
-                    'when have parent group class.'
-                )
-                raise ValidationError(error)
-            k = 1
-            while p is not None:
-                if k > 2:
-                    error = _(
-                        'I can\'t create such group tree depth'
-                    )
-                    raise ValidationError(error)
-                k += 1
-                p = p.parentId
-        elif self.number is not None:
-                self.number = None
-        super(Group, self).clean()
-
-    def validate_unique(self, exclude=None):
-        specialty = None
-        try: specialty = self.specialty
-        except Specialty.DoesNotExist as e: pass
-        args = {
-            'specialty': specialty,
-            'year': self.year,
-            'state': self.state,
-            'parentId': self.parentId,
-            'number': self.number,
-        }
-        if Group.objects.exclude(id=self.id).filter(**args).exists():
-            raise ValidationError(_("Duplicate group"))
-        super(Group, self).validate_unique(exclude)
-
-    def getRootPath(self):
-        arr = []
-        p = self.parentId
-        while p is not None:
-            arr.append(p)
-            p = p.parentId
-        return arr
-
-    def getChilds(self):
-        arr = []
-        childs = Group.objects.filter(parentId=self)
-        arr += childs
-        for i in childs:
-            arr += i.getChilds()
-        return arr
-
-    def getRootPathAndChilds(self):
-        return [self] + self.getRootPath() + self.getChilds()
-
-    def isChild(self, parent):
-        p = self.parentId
-        while p is not None:
-            if p == parent:
-                return True
-            p = p.parentId
-        return False
-
-    def __str__(self):
-        number = []
-        if self.number:
-            number.append(self.number)
-        parent = self.parentId
-        while parent is not None:
-            if parent.number is not None:
-                number.append(parent.number)
-            parent = parent.parentId
-        args = (
-            self.specialty.abbreviation,
-            str(self.year % 100),
-            self.state.suffix,
-            ''.join('-%s' % i for i in reversed(number)),
-        )
-        return '%s-%s%s%s' % args
-
-    class Meta:
-        verbose_name = _('Group')
-        verbose_name_plural = _('Groups')
-        unique_together = [[
-            'specialty', 'year', 'state', 'parentId', 'number'
-        ]]
 
 class Building(models.Model):
     number = models.PositiveSmallIntegerField(
@@ -364,7 +197,7 @@ class Building(models.Model):
 
 class Classroom(models.Model):
     building = models.ForeignKey(
-        Building,
+        'Building',
         on_delete=models.CASCADE,
         verbose_name=_('Building'),
     )
@@ -380,34 +213,272 @@ class Classroom(models.Model):
         verbose_name = _('Classroom')
         verbose_name_plural = _('Classrooms')
 
-class Curriculum(models.Model):
-    group = models.ForeignKey(
-        Group,
-        on_delete=models.CASCADE,
-        verbose_name=_('Group'),
+class GroupState(models.Model):
+    name = models.CharField(
+        verbose_name=_('Name'),
+        max_length=128,
+        unique=True,
     )
+    suffix = models.CharField(
+        verbose_name=_('Suffix'),
+        max_length=16,
+        blank=True,
+        unique=True,
+    )
+    semesters = models.PositiveSmallIntegerField(
+        verbose_name=_('Number of semesters'),
+        default=8,
+    )
+    priority = models.PositiveSmallIntegerField(
+        verbose_name=_('Priority'),
+        choices=((x, x) for x in range(1,10)),
+        default=5,
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _('Group state')
+        verbose_name_plural = _('Group states')
+        order_with_respect_to = 'priority'
+
+class GroupStream(models.Model):
+    def generate_years_choices():
+        r = reversed(range(START_YEAR, current_year + 1))
+        return ((x, x) for x in r)
+
+    YEARS_CHOICES = generate_years_choices()
+
+    specialty = models.ForeignKey(
+        'Specialty',
+        on_delete=models.PROTECT,
+        verbose_name=_('Specialty'),
+    )
+    year = models.PositiveSmallIntegerField(
+        verbose_name=_('Year'),
+        choices=YEARS_CHOICES,
+        default=current_year,
+    )
+    state = models.ForeignKey(
+        'GroupState',
+        on_delete=models.PROTECT,
+        verbose_name=_('State'),
+        default={'priority': 1},
+    )
+
+    def __str__(self):
+        return '%s-%s%s' % (
+            self.specialty.abbreviation,
+            str(self.year % 100),
+            self.state.suffix,
+        )
+
+    class Meta:
+        verbose_name = _('Group stream')
+        verbose_name_plural = _('Group streams')
+        unique_together = [['specialty', 'year', 'state']]
+
+class SemesterSchedule(models.Model):
+    group = models.ForeignKey(
+        'GroupStream',
+        on_delete=models.CASCADE,
+        verbose_name=_('Group stream'),
+    )
+
     semester = models.PositiveSmallIntegerField(
         verbose_name=_('Semester'),
+        validators=[MinValueValidator(1)]
+    )
+
+    startDate = models.DateField(
+        verbose_name=_('Start date'),
+        default=None,
+        blank=True,
+        null=True,
+    )
+
+    endDate = models.DateField(
+        verbose_name=_('End date'),
+        default=None,
+        blank=True,
+        null=True,
     )
 
     def clean(self):
-        group = None
-        try: group = self.group
-        except Group.DoesNotExist as e: pass
-        if group:
-            if group.parentId is not None:
-                msg = _("Curriculum can be only on root group")
-                raise ValidationError(msg)
-            max_semester = group.state.semesters
-            if self.semester > max_semester:
-                msg = _("Can't create semester more than {} for this group")
-                raise ValidationError(msg.format(max_semester))
-        super(Curriculum, self).clean()
+        if self.startDate and self.endDate and self.startDate > self.endDate:
+            error = _("End date should be greater than start date.")
+            raise ValidationError(error)
+        super(SemesterSchedule, self).clean()
 
     def __str__(self):
         s = _('{semester} semester')
         string = s.format(semester=self.semester)
         return '%s - %s' % (self.group, string)
+
+    class Meta:
+        verbose_name = _('Semester schedule')
+        verbose_name_plural = _('Semester schedule')
+        unique_together = [['group', 'semester']]
+
+class Group(models.Model):
+    def generate_number_choices():
+        l = [(None,'-')]
+        for x in range(1, 9):
+            l.append((x, x))
+        return l
+
+    NUMBER_CHOICES = generate_number_choices()
+
+    group_stream = models.ForeignKey(
+        'GroupStream',
+        on_delete=models.CASCADE,
+        verbose_name=_('Group stream'),
+        default=None,
+        blank=True,
+        null=True,
+    )
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        verbose_name=_('Parent node'),
+        default=None,
+        blank=True,
+        null=True,
+    )
+    number = models.PositiveSmallIntegerField(
+        verbose_name=_('Number'),
+        choices=NUMBER_CHOICES,
+        default=None,
+        blank=True,
+        null=True,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(Group, self).__init__(*args, **kwargs)
+        self.__important_fields = ['parent']
+        for field in self.__important_fields:
+            setattr(self, '__original_%s' % field, getattr(self, field))
+
+    def has_changed(self):
+        for field in self.__important_fields:
+            orig = '__original_%s' % field
+            if getattr(self, orig) != getattr(self, field):
+                return True
+        return False
+
+    def save(self, *args, **kwargs):
+        parent = None
+        try: parent = self.parent
+        except Group.DoesNotExist as e: pass
+        if self.parent is not None:
+            self.group_stream = self.parent.group_stream
+        elif self.number is not None:
+            self.number = None
+        super(Group, self).save(*args, **kwargs)
+
+    def clean(self):
+        ceb = CurriculumEntry.objects.filter(group=self).exists()
+        cetb = CurriculumEntryTeacher.objects.filter(group=self).exists()
+        if ceb and cetb and self.has_changed():
+            error = _("Parent node can't be changed when {} and {} exists")
+            cevn = CurriculumEntry._meta.verbose_name
+            cetvn = CurriculumEntryTeacher._meta.verbose_name
+            raise ValidationError(error.format(cevn, cetvn))
+        if self.parent is not None:
+            if self.number is None:
+                error = _("Number may not be empty when having parent group class.")
+                raise ValidationError(error)
+            depth = self.calculate_max_depth_of_childs()
+            if depth > MAX_GROUP_TREE_HEIGHT:
+                error = _("Group can't have parent group with such depth.")
+                raise ValidationError(error)
+        super(Group, self).clean()
+
+    def validate_unique(self, exclude=None):
+        group_stream = None
+        try: group_stream = self.group_stream
+        except Group.DoesNotExist as e: pass
+        parent = None
+        try: parent = self.parent
+        except Group.DoesNotExist as e: pass
+        if group_stream and parent:
+            args = {
+                'group_stream': self.group_stream,
+                'parent': parent,
+                'number': self.number,
+            }
+            if Group.objects.exclude(id=self.id).filter(**args).exists():
+                raise ValidationError(_("Duplicate group node"))
+        super(Group, self).validate_unique(exclude)
+
+    def get_path_to_root(self):
+        arr = []
+        p = self.parent
+        while p is not None:
+            arr.append(p)
+            p = p.parent
+        return arr
+
+    def get_childs(self):
+        arr = []
+        childs = Group.objects.filter(parent=self, parent__isnull=False)
+        arr += childs
+        for i in childs:
+            arr += i.get_childs()
+        return arr
+
+    def get_path_to_root_and_childs(self):
+        return [self] + self.get_path_to_root() + self.get_childs()
+
+    def is_child(self, parent):
+        p = self.parent
+        while p is not None:
+            if p == parent:
+                return True
+            p = p.parent
+        return False
+
+    def calculate_node_height(self, depth=0):
+        childs = Group.objects.filter(parent=self, parent__isnull=False)
+        max_depth = depth
+        for i in childs:
+            m = i.calculate_node_height(depth + 1)
+            if max_depth < m: max_depth = m
+        return max_depth
+
+    def calculate_max_depth_of_childs(self):
+        print("calculate_max_depth_of_childs(%s)" % self)
+        return 1 + len(self.get_path_to_root()) + self.calculate_node_height()
+
+    def __str__(self):
+        number = [self] + self.get_path_to_root()
+        args = (
+            str(self.group_stream),
+            ''.join('-%s' % i.number for i in reversed(number[:-1])),
+        )
+        return '%s%s' % args
+
+    class Meta:
+        verbose_name = _('Group')
+        verbose_name_plural = _('Groups')
+        unique_together = [[
+            'group_stream', 'parent', 'number'
+        ]]
+
+class Curriculum(models.Model):
+    group = models.ForeignKey(
+        'GroupStream',
+        on_delete=models.CASCADE,
+        verbose_name=_('Group stream'),
+    )
+    semester = models.PositiveSmallIntegerField(
+        verbose_name=_('Semester'),
+    )
+
+    def __str__(self):
+        semester = _('{semester} semester').format(semester=self.semester)
+        return '%s - %s' % (self.group, semester)
 
     class Meta:
         verbose_name = _('Curriculum')
@@ -417,12 +488,12 @@ class Curriculum(models.Model):
 
 class CurriculumEntry(models.Model):
     curriculum = models.ForeignKey(
-        Curriculum,
+        'Curriculum',
         on_delete=models.CASCADE,
         verbose_name=_('Curriculum'),
     )
     group = models.ForeignKey(
-        Group,
+        'Group',
         on_delete=models.CASCADE,
         verbose_name=_('Group'),
     )
@@ -430,7 +501,6 @@ class CurriculumEntry(models.Model):
         Subject,
         through='CurriculumEntrySubject',
         verbose_name=_('Subjects'),
-        related_name='several_subjects'
     )
     teachers = models.ManyToManyField(
         Teacher,
@@ -457,11 +527,9 @@ class CurriculumEntry(models.Model):
         except Curriculum.DoesNotExist as e: pass
         try: group = self.group
         except Group.DoesNotExist as e: pass
-        if curriculum and group:
-            pg = curriculum.group
-            if pg != group and not group.isChild(pg):
-                msg = _("Group must be child of or same as group in curriculum")
-                raise ValidationError(msg)
+        if curriculum and group and group.group_stream != curriculum.group:
+            error = _("Group must be child of or same as group in curriculum")
+            raise ValidationError(error)
         super(CurriculumEntry, self).clean()
 
     def getSemester(self):
@@ -473,9 +541,8 @@ class CurriculumEntry(models.Model):
     def __str__(self):
         subjects = self.getSubjectName()
         if subjects: subjects = ' - ' + subjects
-        s = _('{semester} semester')
-        string = s.format(semester=self.getSemester())
-        return '%s - %s%s' % (self.group, string, subjects)
+        semester = _('{semester} semester').format(semester=self.getSemester())
+        return '%s - %s%s' % (self.group, semester, subjects)
 
     class Meta:
         verbose_name = _('Curriculum entry')
@@ -483,13 +550,13 @@ class CurriculumEntry(models.Model):
 
 class CurriculumEntrySubject(models.Model):
     entry = models.ForeignKey(
-        CurriculumEntry,
+        'CurriculumEntry',
         on_delete=models.CASCADE,
         verbose_name=_('Curriculum entry'),
     )
 
     subject = models.ForeignKey(
-        Subject,
+        'Subject',
         on_delete=models.CASCADE,
         verbose_name=_('Subject'),
     )
@@ -517,13 +584,13 @@ class CurriculumEntryTeacher(models.Model):
     ]
 
     entry = models.ForeignKey(
-        CurriculumEntry,
+        'CurriculumEntry',
         on_delete=models.CASCADE,
         verbose_name=_('Curriculum entry'),
     )
 
     group = models.ForeignKey(
-        Group,
+        'Group',
         on_delete=models.CASCADE,
         verbose_name=_('Group'),
     )
@@ -535,7 +602,7 @@ class CurriculumEntryTeacher(models.Model):
     )
 
     teacher = models.ForeignKey(
-        Teacher,
+        'Teacher',
         on_delete=models.CASCADE,
         verbose_name=_('Teacher'),
     )
@@ -549,9 +616,9 @@ class CurriculumEntryTeacher(models.Model):
         except Group.DoesNotExist as e: pass
         if entry and group:
             pg = entry.group
-            if pg != group and not group.isChild(pg):
-                msg = _("Group must be child of or same as group in entry")
-                raise ValidationError(msg)
+            if pg != group and not group.is_child(pg):
+                error = _("Group must be child of or same as group in entry")
+                raise ValidationError(error)
         super(CurriculumEntryTeacher, self).clean()
 
     def validate_unique(self, exclude=None):
@@ -561,16 +628,17 @@ class CurriculumEntryTeacher(models.Model):
         except CurriculumEntry.DoesNotExist as e: pass
         try: group = self.group
         except Group.DoesNotExist as e: pass
-        arr = group.getRootPathAndChilds() if group else []
-        args = {
-            'entry': entry,
-            'group__in': arr,
-            'responsibility': self.responsibility,
-        }
-        f = CurriculumEntryTeacher.objects.exclude(id=self.id).filter(**args)
-        if f.exists():
-            msg = _("Duplicate teacher for curriculum entry by group {}.")
-            raise ValidationError(msg.format(f.first().group))
+        if entry and group:
+            arr = group.get_path_to_root_and_childs() if group else []
+            args = {
+                'entry': entry,
+                'group__in': arr,
+                'responsibility': self.responsibility,
+            }
+            f = CurriculumEntryTeacher.objects.exclude(id=self.id).filter(**args)
+            if f.exists():
+                error = _("Duplicate teacher for curriculum entry by group {}.")
+                raise ValidationError(error.format(f.first().group))
         super(CurriculumEntryTeacher, self).validate_unique(exclude)
 
     def __str__(self):
@@ -586,58 +654,6 @@ class CurriculumEntryTeacher(models.Model):
             'entry', 'group', 'responsibility',
         ]]
 
-class SemesterSchedule(models.Model):
-    group = models.ForeignKey(
-        Group,
-        on_delete=models.CASCADE,
-        verbose_name=_('Group'),
-    )
-
-    semester = models.PositiveSmallIntegerField(
-        verbose_name=_('Semester'),
-        default=0,
-    )
-
-    startDate = models.DateField(
-        verbose_name=_('Start date'),
-        default=None,
-        blank=True,
-        null=True,
-    )
-
-    endDate = models.DateField(
-        verbose_name=_('End date'),
-        default=None,
-        blank=True,
-        null=True,
-    )
-
-    def clean(self):
-        group = None
-        try: group = self.group
-        except Group.DoesNotExist as e: pass
-        if group:
-            if group.parentId is not None:
-                msg = _("Semester schedule can be only on root group")
-                raise ValidationError(msg)
-            if self.semester > self.group.state.semesters:
-                msg = _("Semester can't be more that number of semesters in group")
-                raise ValidationError(msg)
-        if self.startDate and self.endDate and self.startDate > self.endDate:
-            msg = _("End date should be greater than start date.")
-            raise ValidationError(msg)
-        super(SemesterSchedule, self).clean()
-
-    def __str__(self):
-        s = _('{semester} semester')
-        string = s.format(semester=self.semester)
-        return '%s - %s' % (self.group, string)
-
-    class Meta:
-        verbose_name = _('Semester schedule')
-        verbose_name_plural = _('Semester schedule')
-        unique_together = [['group', 'semester']]
-
 
 class TimetableEntry(models.Model):
     def generateLessonChoices():
@@ -649,8 +665,8 @@ class TimetableEntry(models.Model):
         )
         msg = _('{lesson} lesson')
         for ik, iv in enumerate(weeks):
-            for j in workDays:
-                for k in range(1, maxLessonsADay + 1):
+            for j in WORK_DAYS:
+                for k in range(1, MAX_LESSONS_DAY + 1):
                     l = msg.format(lesson=k)
                     val = ik * 256 + j * 32 + k
                     arr.append((val, '%s - %s - %s' % (iv, days[j], l)))
@@ -659,13 +675,13 @@ class TimetableEntry(models.Model):
     LESSON_CHOICES = generateLessonChoices()
 
     entry = models.ForeignKey(
-        CurriculumEntry,
+        'CurriculumEntry',
         on_delete=models.CASCADE,
         verbose_name=_('Curriculum entry'),
     )
 
     group = models.ForeignKey(
-        Group,
+        'Group',
         on_delete=models.CASCADE,
         verbose_name=_('Group'),
     )
@@ -677,7 +693,7 @@ class TimetableEntry(models.Model):
     )
 
     classroom = models.ForeignKey(
-        Classroom,
+        'Classroom',
         on_delete=models.CASCADE,
         verbose_name=_('Classroom'),
         default=None,
@@ -686,7 +702,7 @@ class TimetableEntry(models.Model):
     )
 
     teacher = models.ForeignKey(
-        Teacher,
+        'Teacher',
         on_delete=models.CASCADE,
         verbose_name=_('Teacher'),
         default=None,
@@ -703,9 +719,9 @@ class TimetableEntry(models.Model):
         except Group.DoesNotExist as e: pass
         if entry and group:
             pg = entry.group
-            if pg != group and not group.isChild(pg):
-                msg = _("Group must be child of or same as group in curriculum entry")
-                raise ValidationError(msg)
+            if pg != group and not group.is_child(pg):
+                error = _("Group must be child of or same as group in curriculum entry")
+                raise ValidationError(error)
         super(TimetableEntry, self).clean()
 
     def validate_unique(self, exclude=None):
@@ -716,7 +732,7 @@ class TimetableEntry(models.Model):
         try: group = self.group
         except Group.DoesNotExist as e: pass
         if group:
-            arr = group.getRootPathAndChilds()
+            arr = group.get_path_to_root_and_childs()
             args = {
                 'entry': entry,
                 'group__in': arr,
@@ -724,8 +740,8 @@ class TimetableEntry(models.Model):
             }
             f = TimetableEntry.objects.exclude(id=self.id).filter(**args)
             if f.exists():
-                msg = _("Duplicate timetable entry by group {}.")
-                raise ValidationError(msg.format(f.first().group))
+                error = _("Duplicate timetable entry by group {}.")
+                raise ValidationError(error.format(f.first().group))
         super(TimetableEntry, self).validate_unique(exclude)
 
     def __str__(self):

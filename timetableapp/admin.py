@@ -7,6 +7,7 @@ from .models import Person
 from .models import Teacher
 from .models import Specialty
 from .models import GroupState
+from .models import GroupStream
 from .models import Group
 from .models import Building
 from .models import Classroom
@@ -34,16 +35,18 @@ class CurriculumEntryAdmin(admin.ModelAdmin):
         CurriculumEntrySubjectInline,
         CurriculumEntryTeacherInline,
     ]
-    exclude = ('subjects',)
 
 class SemesterScheduleInline(admin.TabularInline):
     model = SemesterSchedule
 
-class GroupAdmin(admin.ModelAdmin):
+class GroupInline(admin.TabularInline):
+    model = Group
+
+class GroupStreamAdmin(admin.ModelAdmin):
     inlines = [
         SemesterScheduleInline,
+        GroupInline,
     ]
-    #exclude = ('subjects',)
 
 admin.site.register(Faculty)
 
@@ -57,13 +60,15 @@ admin.site.register(Teacher)
 
 admin.site.register(Specialty)
 
-admin.site.register(GroupState)
-
-admin.site.register(Group, GroupAdmin)
-
 admin.site.register(Building)
 
 admin.site.register(Classroom)
+
+admin.site.register(GroupState)
+
+admin.site.register(GroupStream, GroupStreamAdmin)
+
+admin.site.register(Group)
 
 admin.site.register(Curriculum, CurriculumAdmin)
 
