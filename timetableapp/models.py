@@ -1,15 +1,57 @@
+import datetime
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
-import datetime
+from django.apps import apps
 
 START_YEAR = 1900
 FUTURE_DIFF = 5
 MAX_LESSONS_DAY = 5
 WORK_DAYS = [0, 1, 2, 3, 4, 5]
 MAX_GROUP_TREE_HEIGHT = 3
-current_year = datetime.datetime.now().year
+
+def current_year():
+    return datetime.date.today().year
+
+def year_max_value(value):
+    return MaxValueValidator(current_year())(value)
+
+class ReadOnlyOnExistForeignKey(object):
+    def __init__(self, *args, **kwargs):
+        super(ReadOnlyOnExistForeignKey, self).__init__(*args, **kwargs)
+        self.__important_fields = getattr(self, 'important_fields')
+        self.__related_models = getattr(self, 'related_models')
+        for field in self.__important_fields:
+            setattr(self, '__original_%s' % field, getattr(self, field))
+
+    def has_changed(self):
+        for field in self.__important_fields:
+            orig = '__original_%s' % field
+            if getattr(self, orig) != getattr(self, field):
+                return True
+        return False
+
+    def clean(self, *args, **kwargs):
+        models = []
+        for i in self.__related_models:
+            models.append((apps.get_model('timetableapp', i[0]), i[1]))
+        fields = self.__important_fields
+        exists = False
+        for i in models:
+            if i[0].objects.filter(**{i[1]: self}).exists():
+                exists = True
+                break
+        if exists and self.has_changed():
+            error = _("{} fields can't be changed when {} exists")
+            flds = [str(self._meta.get_field(i).verbose_name) for i in fields]
+            f = _(" and ").join(flds)
+            mdls = [str(i[0]._meta.verbose_name) for i in models]
+            m = _(" and ").join(mdls)
+            raise ValidationError(error.format(f, m))
+        super(ReadOnlyOnExistForeignKey, self).clean(*args, **kwargs)
+
 
 class Faculty(models.Model):
     name = models.CharField(
@@ -27,7 +69,7 @@ class Faculty(models.Model):
     )
 
     def __str__(self):
-        return self.name
+        return self.abbreviation if self.abbreviation else self.name
 
     class Meta:
         verbose_name = _('Faculty')
@@ -135,13 +177,13 @@ class Teacher(models.Model):
         verbose_name_plural = _('Teachers')
 
 class Specialty(models.Model):
-    number = models.PositiveSmallIntegerField(
-        verbose_name=_('Number'),
-        unique=True,
-    )
     name = models.CharField(
         verbose_name=_('Name'),
         max_length=128,
+        unique=True,
+    )
+    number = models.PositiveSmallIntegerField(
+        verbose_name=_('Number'),
         unique=True,
     )
     abbreviation = models.CharField(
@@ -149,9 +191,17 @@ class Specialty(models.Model):
         max_length=16,
         unique=True,
     )
+    faculty = models.ForeignKey(
+        'Faculty',
+        on_delete=models.PROTECT,
+        verbose_name=_('Faculty'),
+        default=None,
+        null=True,
+        blank=True,
+    )
 
     def __str__(self):
-        return self.name
+        return "%s - %s" % (self.number, self.name)
 
     class Meta:
         verbose_name = _('Specialty')
@@ -213,7 +263,7 @@ class Classroom(models.Model):
         verbose_name = _('Classroom')
         verbose_name_plural = _('Classrooms')
 
-class GroupState(models.Model):
+class FormOfStudy(models.Model):
     name = models.CharField(
         verbose_name=_('Name'),
         max_length=128,
@@ -239,17 +289,11 @@ class GroupState(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = _('Group state')
-        verbose_name_plural = _('Group states')
-        order_with_respect_to = 'priority'
+        verbose_name = _('Form of study')
+        verbose_name_plural = _('Forms of study')
+        ordering = ['priority']
 
-class GroupStream(models.Model):
-    def generate_years_choices():
-        r = reversed(range(START_YEAR, current_year + 1))
-        return ((x, x) for x in r)
-
-    YEARS_CHOICES = generate_years_choices()
-
+class GroupStream(ReadOnlyOnExistForeignKey, models.Model):
     specialty = models.ForeignKey(
         'Specialty',
         on_delete=models.PROTECT,
@@ -257,27 +301,30 @@ class GroupStream(models.Model):
     )
     year = models.PositiveSmallIntegerField(
         verbose_name=_('Year'),
-        choices=YEARS_CHOICES,
         default=current_year,
+        validators=[MinValueValidator(START_YEAR), year_max_value],
     )
-    state = models.ForeignKey(
-        'GroupState',
+    form = models.ForeignKey(
+        'FormOfStudy',
         on_delete=models.PROTECT,
-        verbose_name=_('State'),
+        verbose_name=_('Form of study'),
         default={'priority': 1},
     )
+
+    important_fields = ['year', 'form']
+    related_models = [('SemesterSchedule', 'group')]
 
     def __str__(self):
         return '%s-%s%s' % (
             self.specialty.abbreviation,
             str(self.year % 100),
-            self.state.suffix,
+            self.form.suffix,
         )
 
     class Meta:
         verbose_name = _('Group stream')
         verbose_name_plural = _('Group streams')
-        unique_together = [['specialty', 'year', 'state']]
+        unique_together = [['specialty', 'year', 'form']]
 
 class SemesterSchedule(models.Model):
     group = models.ForeignKey(
@@ -288,7 +335,7 @@ class SemesterSchedule(models.Model):
 
     semester = models.PositiveSmallIntegerField(
         verbose_name=_('Semester'),
-        validators=[MinValueValidator(1)]
+        validators=[MinValueValidator(1)],
     )
 
     startDate = models.DateField(
@@ -321,7 +368,7 @@ class SemesterSchedule(models.Model):
         verbose_name_plural = _('Semester schedule')
         unique_together = [['group', 'semester']]
 
-class Group(models.Model):
+class Group(ReadOnlyOnExistForeignKey, models.Model):
     def generate_number_choices():
         l = [(None,'-')]
         for x in range(1, 9):
@@ -354,18 +401,24 @@ class Group(models.Model):
         null=True,
     )
 
-    def __init__(self, *args, **kwargs):
-        super(Group, self).__init__(*args, **kwargs)
-        self.__important_fields = ['parent']
-        for field in self.__important_fields:
-            setattr(self, '__original_%s' % field, getattr(self, field))
+    important_fields = ['parent']
+    related_models = [
+        ('CurriculumEntry', 'group'),
+        ('CurriculumEntryTeacher', 'group'),
+    ]
 
-    def has_changed(self):
-        for field in self.__important_fields:
-            orig = '__original_%s' % field
-            if getattr(self, orig) != getattr(self, field):
-                return True
-        return False
+    #~ def __init__(self, *args, **kwargs):
+        #~ super(Group, self).__init__(*args, **kwargs)
+        #~ self.__important_fields = ['parent']
+        #~ for field in self.__important_fields:
+            #~ setattr(self, '__original_%s' % field, getattr(self, field))
+
+    #~ def has_changed(self):
+        #~ for field in self.__important_fields:
+            #~ orig = '__original_%s' % field
+            #~ if getattr(self, orig) != getattr(self, field):
+                #~ return True
+        #~ return False
 
     def save(self, *args, **kwargs):
         parent = None
@@ -378,13 +431,13 @@ class Group(models.Model):
         super(Group, self).save(*args, **kwargs)
 
     def clean(self):
-        ceb = CurriculumEntry.objects.filter(group=self).exists()
-        cetb = CurriculumEntryTeacher.objects.filter(group=self).exists()
-        if ceb and cetb and self.has_changed():
-            error = _("Parent node can't be changed when {} and {} exists")
-            cevn = CurriculumEntry._meta.verbose_name
-            cetvn = CurriculumEntryTeacher._meta.verbose_name
-            raise ValidationError(error.format(cevn, cetvn))
+        #~ ceb = CurriculumEntry.objects.filter(group=self).exists()
+        #~ cetb = CurriculumEntryTeacher.objects.filter(group=self).exists()
+        #~ if ceb and cetb and self.has_changed():
+            #~ error = _("Parent node can't be changed when {} and {} exists")
+            #~ cevn = CurriculumEntry._meta.verbose_name
+            #~ cetvn = CurriculumEntryTeacher._meta.verbose_name
+            #~ raise ValidationError(error.format(cevn, cetvn))
         if self.parent is not None:
             if self.number is None:
                 error = _("Number may not be empty when having parent group class.")
