@@ -83,8 +83,8 @@ class SubjectAdmin(ImportExportModelAdmin):
 
 @admin.register(Person)
 class PersonAdmin(ImportExportModelAdmin):
-    list_display = ('firstName', 'middleName', 'lastName',)
-    search_fields = ('firstName', 'middleName', 'lastName',)
+    list_display = ('first_name', 'middle_name', 'last_name',)
+    search_fields = ('first_name', 'middle_name', 'last_name',)
 
 @admin.register(Teacher)
 class TeacherAdmin(ImportExportModelAdmin):
@@ -164,7 +164,7 @@ class GroupInline(admin.TabularInline):
 
 @admin.register(GroupStream)
 class GroupStreamAdmin(admin.ModelAdmin):
-    list_display = ('specialty', 'year', 'form')
+    list_display = ('specialty', 'year', 'form',)
     search_fields = ('specialty', 'year', 'form',)
     list_filter = (SpecialtyFacultyFilter, 'form', SpecialtyYearFilter,)
     raw_id_fields = ('specialty',)

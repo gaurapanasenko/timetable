@@ -4,7 +4,11 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.contrib.admin import widgets
 from django.apps import apps
+from django import forms
+
+from yearlessdate.models import YearlessDateField
 
 START_YEAR = 1900
 FUTURE_DIFF = 5
@@ -24,12 +28,18 @@ class ReadOnlyOnExistForeignKey(object):
         self.__important_fields = getattr(self, 'important_fields')
         self.__related_models = getattr(self, 'related_models')
         for field in self.__important_fields:
-            setattr(self, '__original_%s' % field, getattr(self, field))
+            try:
+                setattr(self, '__original_%s' % field, getattr(self, field))
+            except:
+                setattr(self, '__original_%s' % field, None)
 
     def has_changed(self):
         for field in self.__important_fields:
             orig = '__original_%s' % field
-            if getattr(self, orig) != getattr(self, field):
+            new_value = None
+            try: new_value = getattr(self, field)
+            except: pass
+            if getattr(self, orig) != new_value:
                 return True
         return False
 
@@ -125,29 +135,29 @@ class Subject(models.Model):
         verbose_name_plural = _('Subjects')
 
 class Person(models.Model):
-    firstName = models.CharField(
+    first_name = models.CharField(
         verbose_name=_('First name'),
         max_length=128,
     )
 
-    middleName = models.CharField(
+    middle_name = models.CharField(
         verbose_name=_('Middle name'),
         max_length=128,
     )
 
-    lastName = models.CharField(
+    last_name = models.CharField(
         verbose_name=_('Last name'),
         max_length=128,
     )
 
     def __str__(self):
-        args = (self.firstName, self.middleName, self.lastName)
+        args = (self.first_name, self.middle_name, self.last_name)
         return '%s %s %s' % args
 
     class Meta:
         verbose_name = _('Person')
         verbose_name_plural = _('Persons')
-        unique_together = [['firstName', 'middleName', 'lastName']]
+        unique_together = [['first_name', 'middle_name', 'last_name']]
 
 class Teacher(models.Model):
     person = models.ForeignKey(
@@ -284,6 +294,56 @@ class FormOfStudy(models.Model):
         choices=((x, x) for x in range(1,10)),
         default=5,
     )
+    start_date_first = YearlessDateField(
+        verbose_name=_('Default start date for first semester'),
+        default=None,
+        blank=True,
+        null=True,
+    )
+    end_date_first = YearlessDateField(
+        verbose_name=_('Default end date for first semester'),
+        default=None,
+        blank=True,
+        null=True,
+    )
+    start_date_second = YearlessDateField(
+        verbose_name=_('Default start date for second semester'),
+        default=None,
+        blank=True,
+        null=True,
+    )
+    end_date_second = YearlessDateField(
+        verbose_name=_('Default end date for second semester'),
+        default=None,
+        blank=True,
+        null=True,
+    )
+
+    def clean(self):
+        #~ error = False
+
+        #~ st1 = self.form.start_date_first
+        #~ et1 = self.form.end_date_first
+        #~ st2 = self.form.start_date_second
+        #~ et2 = self.form.end_date_second
+
+        #~ y = START_YEAR
+        #~ st1 = datetime.date(y, st1.month, st1.day)
+        #~ et1 = datetime.date(y, et1.month, et1.day)
+        #~ st2 = datetime.date(y, st2.month, st2.day)
+        #~ et2 = datetime.date(y, et2.month, et2.day)
+
+        #~ if et1 < st1 and et2 < st2:
+            #~ error = _("Time intervals cannot intersect")
+            #~ raise ValidationError(error)
+        #~ if et1 < st1:
+            #~ et1 = datetime.date(y + 1, et1.month, et1.day)
+            #~ st2 = datetime.date(y + 1, st2.month, st2.day)
+            #~ et2 = datetime.date(y + 1, et2.month, et2.day)
+        #~ if et2 < st2:et2 = datetime.date(y + 1, et1.month, et2.day)
+
+        super(FormOfStudy, self).clean()
+
 
     def __str__(self):
         return self.name
@@ -314,6 +374,33 @@ class GroupStream(ReadOnlyOnExistForeignKey, models.Model):
     important_fields = ['year', 'form']
     related_models = [('SemesterSchedule', 'group')]
 
+    def save(self, *args, **kwargs):
+        new = False
+        if self.pk is None: new = True
+        super(GroupStream, self).save(*args, **kwargs)
+        if new:
+            st1 = self.form.start_date_first
+            et1 = self.form.end_date_first
+            st2 = self.form.start_date_second
+            et2 = self.form.end_date_second
+            if st1 and et1 and st2 and et2:
+                semesters = self.form.semesters
+                for i in range(1, semesters + 1):
+                    y = int(self.year + i / 2)
+                    std = st1 if i % 2 else st2
+                    std = datetime.date(y, std.month, std.day)
+                    etd = et1 if i % 2 else et2
+                    etd = datetime.date(y, etd.month, etd.day)
+                    if etd < std:
+                        etd = datetime.date(y + 1, etd.month, etd.day)
+                    args_dict = {
+                        'group': self,
+                        'semester': i,
+                        'start_date': std,
+                        'end_date': etd,
+                    }
+                    SemesterSchedule.objects.create(**args_dict)
+
     def __str__(self):
         return '%s-%s%s' % (
             self.specialty.abbreviation,
@@ -338,14 +425,14 @@ class SemesterSchedule(models.Model):
         validators=[MinValueValidator(1)],
     )
 
-    startDate = models.DateField(
+    start_date = models.DateField(
         verbose_name=_('Start date'),
         default=None,
         blank=True,
         null=True,
     )
 
-    endDate = models.DateField(
+    end_date = models.DateField(
         verbose_name=_('End date'),
         default=None,
         blank=True,
@@ -353,7 +440,7 @@ class SemesterSchedule(models.Model):
     )
 
     def clean(self):
-        if self.startDate and self.endDate and self.startDate > self.endDate:
+        if self.start_date and self.end_date and self.start_date > self.end_date:
             error = _("End date should be greater than start date.")
             raise ValidationError(error)
         super(SemesterSchedule, self).clean()
@@ -569,7 +656,7 @@ class CurriculumEntry(models.Model):
     laboratory = models.PositiveSmallIntegerField(
         verbose_name=_('Number of laboratory'),
     )
-    independentWork = models.PositiveSmallIntegerField(
+    independent_work = models.PositiveSmallIntegerField(
         verbose_name=_('Amount of independent work'),
     )
 
@@ -585,16 +672,16 @@ class CurriculumEntry(models.Model):
             raise ValidationError(error)
         super(CurriculumEntry, self).clean()
 
-    def getSemester(self):
+    def get_semester(self):
         return self.curriculum.semester
 
-    def getSubjectName(self):
+    def get_subject_name(self):
         return '/'.join(str(i) for i in self.subjects.all())
 
     def __str__(self):
-        subjects = self.getSubjectName()
+        subjects = self.get_subject_name()
         if subjects: subjects = ' - ' + subjects
-        semester = _('{semester} semester').format(semester=self.getSemester())
+        semester = _('{semester} semester').format(semester=self.get_semester())
         return '%s - %s%s' % (self.group, semester, subjects)
 
     class Meta:
@@ -614,16 +701,16 @@ class CurriculumEntrySubject(models.Model):
         verbose_name=_('Subject'),
     )
 
-    def getGroup(self):
+    def get_group(self):
         return self.entry.group
 
-    def getSemester(self):
-        return self.entry.getSemester()
+    def get_semester(self):
+        return self.entry.get_semester()
 
     def __str__(self):
         s = _('{semester} semester')
-        string = s.format(semester=self.getSemester())
-        return '%s - %s - %s' % (self.getGroup(), string, self.subject)
+        string = s.format(semester=self.get_semester())
+        return '%s - %s - %s' % (self.get_group(), string, self.subject)
 
     class Meta:
         verbose_name = _('Subject for curriculum entry')
@@ -709,7 +796,7 @@ class CurriculumEntryTeacher(models.Model):
 
 
 class TimetableEntry(models.Model):
-    def generateLessonChoices():
+    def generate_lesson_choices():
         arr = []
         weeks = (_('numerator'), _('denominator'))
         days = (
@@ -725,7 +812,7 @@ class TimetableEntry(models.Model):
                     arr.append((val, '%s - %s - %s' % (iv, days[j], l)))
         return arr
 
-    LESSON_CHOICES = generateLessonChoices()
+    LESSON_CHOICES = generate_lesson_choices()
 
     entry = models.ForeignKey(
         'CurriculumEntry',
