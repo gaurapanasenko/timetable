@@ -1,5 +1,3 @@
-import csv, datetime
-
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from django.http import HttpResponse
@@ -10,6 +8,8 @@ from django.shortcuts import redirect
 from import_export.admin import ImportExportModelAdmin
 
 #~ from .forms import SubjectForm
+
+from .settings import *
 
 from .models import Faculty
 from .models import Department
@@ -26,9 +26,6 @@ from .models import Curriculum
 from .models import CurriculumEntry
 from .models import SemesterSchedule
 from .models import TimetableEntry
-
-START_YEAR = 1900
-current_year = datetime.datetime.now().year
 
 class CurriculumEntryInline(admin.TabularInline):
     model = CurriculumEntry
@@ -123,7 +120,7 @@ class SpecialtyYearFilter(admin.SimpleListFilter):
     def lookups(self, request, model_admin):
         arr = []
         for i in range(0, 5):
-            year = current_year - i
+            year = current_year() - i
             arr.append(('{0}-{0}'.format(year), year))
         for i in reversed(range(START_YEAR, year + 5, 10)):
             year = '{0}-{1}'.format(i, i + 10)

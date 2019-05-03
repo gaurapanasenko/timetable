@@ -1,5 +1,3 @@
-import datetime
-
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
@@ -10,14 +8,7 @@ from django import forms
 
 from yearlessdate.models import YearlessDateField
 
-START_YEAR = 1900
-FUTURE_DIFF = 5
-MAX_LESSONS_DAY = 5
-WORK_DAYS = [0, 1, 2, 3, 4, 5]
-MAX_GROUP_TREE_HEIGHT = 3
-
-def current_year():
-    return datetime.date.today().year
+from .settings import *
 
 def year_max_value(value):
     return MaxValueValidator(current_year())(value)
@@ -320,28 +311,11 @@ class FormOfStudy(models.Model):
     )
 
     def clean(self):
-        #~ error = False
-
-        #~ st1 = self.form.start_date_first
-        #~ et1 = self.form.end_date_first
-        #~ st2 = self.form.start_date_second
-        #~ et2 = self.form.end_date_second
-
-        #~ y = START_YEAR
-        #~ st1 = datetime.date(y, st1.month, st1.day)
-        #~ et1 = datetime.date(y, et1.month, et1.day)
-        #~ st2 = datetime.date(y, st2.month, st2.day)
-        #~ et2 = datetime.date(y, et2.month, et2.day)
-
-        #~ if et1 < st1 and et2 < st2:
-            #~ error = _("Time intervals cannot intersect")
-            #~ raise ValidationError(error)
-        #~ if et1 < st1:
-            #~ et1 = datetime.date(y + 1, et1.month, et1.day)
-            #~ st2 = datetime.date(y + 1, st2.month, st2.day)
-            #~ et2 = datetime.date(y + 1, et2.month, et2.day)
-        #~ if et2 < st2:et2 = datetime.date(y + 1, et1.month, et2.day)
-
+        r1 = self.start_date_first.create_range(self.end_date_first)
+        r2 = self.start_date_second.create_range(self.end_date_second)
+        if r1.is_intersecting(r2):
+            error = _("Date ranges are intersecting")
+            raise ValidationError(error)
         super(FormOfStudy, self).clean()
 
 

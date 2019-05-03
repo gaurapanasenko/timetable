@@ -2,14 +2,34 @@ import calendar
 from django.utils.deconstruct import deconstructible
 from django.utils.translation import gettext_lazy as _
 
-TEST_YEAR = 2008
+from .settings import *
+
+class YearlessDateRange(object):
+    def __init__(self, start_date, end_date, *args, **kwargs):
+        super(YearlessDateRange, self).__init__(*args, **kwargs)
+        self.start_date = start_date
+        self.end_date = end_date
+
+    def is_intersecting(self, other):
+        array = list(enumerate([
+            self.start_date, self.end_date,
+            other.start_date, other.end_date
+        ]))
+        array.sort(key=lambda i: i[1])
+        i = next(k for k, v in enumerate(array) if v[0] == 0)
+        array = array[i:] + array[:i]
+        return not all(x < y for x, y in zip(array, array[1:]))
 
 @deconstructible
 class YearlessDate(object):
-    def __init__(self, month, day):
+    def __init__(self, month, day, *args, **kwargs):
+        super(YearlessDate, self).__init__(*args, **kwargs)
         self.month = int(month)
         self.day = int(day)
         self._validate()
+
+    def create_range(self, end_date):
+        return YearlessDateRange(self, end_date)
 
     def _validate(self):
         try:

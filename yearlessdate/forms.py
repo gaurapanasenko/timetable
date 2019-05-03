@@ -10,7 +10,6 @@ from .helpers import YearlessDate
 DAY_CHOICES = tuple([('', '---------' )] + [(i,i) for i in range(1,32)])
 MONTH_CHOICES = tuple([('', '---------' )] + [(i, calendar.month_name[i]) for i in range(1,13)])
 
-
 class YearlessDateSelect(widgets.MultiWidget):
     def __init__(self, attrs = None):
         _widgets = (
