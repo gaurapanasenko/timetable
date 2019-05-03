@@ -33,6 +33,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'timetableapp.apps.TimetableappConfig',
     'yearlessdate.apps.YearlessdateConfig',
+    'django_improvements.apps.DjangoImprovementsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
