@@ -136,3 +136,5 @@ STATIC_URL = '/static/'
 # Import, export app options
 
 #~ IMPORT_EXPORT_USE_TRANSACTIONS = True
+
+#~ TIMETABLEAPP_START_YEAR = 2000

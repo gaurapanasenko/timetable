@@ -18,6 +18,7 @@ from .models import Person
 from .models import Teacher
 from .models import Specialty
 from .models import FormOfStudy
+from .models import FormOfStudySemester
 from .models import GroupStream
 from .models import Group
 from .models import Building
@@ -107,11 +108,15 @@ class ClassroomAdmin(ImportExportModelAdmin):
     search_fields = ('building', 'number',)
     list_filter = ('building', )
 
+class FormOfStudySemesterInline(admin.TabularInline):
+    model = FormOfStudySemester
+
 @admin.register(FormOfStudy)
 class FormOfStudyAdmin(ImportExportModelAdmin):
     list_display = ('name', 'suffix', 'semesters', 'priority',)
     search_fields = ('name', 'suffix', 'semesters', 'priority',)
     list_filter = ('semesters', 'priority',)
+    inlines = [FormOfStudySemesterInline]
 
 class SpecialtyYearFilter(admin.SimpleListFilter):
     title = _('Year')

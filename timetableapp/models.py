@@ -6,12 +6,23 @@ from django.contrib.admin import widgets
 from django.apps import apps
 from django import forms
 
-from yearlessdate.models import YearlessDateField
+from yearlessdate.models import YearlessDateField, YearlessDateRangeField
 
 from .settings import *
 
+def year_min_value(value):
+    return MinValueValidator(START_YEAR)(value)
+
 def year_max_value(value):
     return MaxValueValidator(current_year())(value)
+
+#~ class PositiveTinyIntegerField(models.PositiveSmallIntegerField):
+    #~ description = "Tiny Integer Field"
+    #~ def db_type(self, connection):
+        #~ if any(_ in connection.settings_dict['ENGINE'] for _ in ['pyodbc', 'mysql']):
+            #~ return 'tinyint UNSIGNED'
+        #~ else:
+            #~ return 'smallint UNSIGNED'
 
 class ReadOnlyOnExistForeignKey(object):
     def __init__(self, *args, **kwargs):
@@ -285,39 +296,6 @@ class FormOfStudy(models.Model):
         choices=((x, x) for x in range(1,10)),
         default=5,
     )
-    start_date_first = YearlessDateField(
-        verbose_name=_('Default start date for first semester'),
-        default=None,
-        blank=True,
-        null=True,
-    )
-    end_date_first = YearlessDateField(
-        verbose_name=_('Default end date for first semester'),
-        default=None,
-        blank=True,
-        null=True,
-    )
-    start_date_second = YearlessDateField(
-        verbose_name=_('Default start date for second semester'),
-        default=None,
-        blank=True,
-        null=True,
-    )
-    end_date_second = YearlessDateField(
-        verbose_name=_('Default end date for second semester'),
-        default=None,
-        blank=True,
-        null=True,
-    )
-
-    def clean(self):
-        r1 = self.start_date_first.create_range(self.end_date_first)
-        r2 = self.start_date_second.create_range(self.end_date_second)
-        if r1.is_intersecting(r2):
-            error = _("Date ranges are intersecting")
-            raise ValidationError(error)
-        super(FormOfStudy, self).clean()
-
 
     def __str__(self):
         return self.name
@@ -326,6 +304,37 @@ class FormOfStudy(models.Model):
         verbose_name = _('Form of study')
         verbose_name_plural = _('Forms of study')
         ordering = ['priority']
+
+class FormOfStudySemester(models.Model):
+    form = models.ForeignKey(
+        'FormOfStudy',
+        on_delete=models.PROTECT,
+        verbose_name=_('Form of study'),
+        default={'priority': 1},
+    )
+    date_range = YearlessDateRangeField(
+        verbose_name=_('Default time interval'),
+        #~ default=None,
+        #~ blank=True,
+        #~ null=True,
+    )
+
+    def clean(self):
+        objects = FormOfStudySemester.objects.exclude(id=self.id)
+        arr = objects.filter(form=self.form).all()
+        for i in arr:
+            b = self.date_range is not None and i.date_range is not None
+            if b and self.date_range.is_intersecting(i.date_range):
+                error = _("Date ranges are intersecting")
+                raise ValidationError(error)
+        super(FormOfStudySemester, self).clean()
+
+    def __str__(self):
+        return str(_("Semester"))
+
+    class Meta:
+        verbose_name = _('Semester')
+        verbose_name_plural = _('Semesters')
 
 class GroupStream(ReadOnlyOnExistForeignKey, models.Model):
     specialty = models.ForeignKey(
@@ -336,7 +345,7 @@ class GroupStream(ReadOnlyOnExistForeignKey, models.Model):
     year = models.PositiveSmallIntegerField(
         verbose_name=_('Year'),
         default=current_year,
-        validators=[MinValueValidator(START_YEAR), year_max_value],
+        validators=[year_min_value, year_max_value],
     )
     form = models.ForeignKey(
         'FormOfStudy',
