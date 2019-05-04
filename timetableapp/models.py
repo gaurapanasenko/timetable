@@ -1,10 +1,11 @@
+from datetime import date
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.contrib.admin import widgets
-from django.apps import apps
-from django import forms
+
+from mptt.models import MPTTModel, TreeForeignKey
 
 from yearlessdate.models import YearlessDateField, YearlessDateRangeField
 from django_improvements.models import ReadOnlyOnExistForeignKey
@@ -193,7 +194,7 @@ class Building(models.Model):
         null=True,
     )
     latitude = models.DecimalField(
-        verbose_name=_('Longitude'),
+        verbose_name=_('Latitude'),
         max_digits=9,
         decimal_places=6,
         default=None,
@@ -241,6 +242,7 @@ class FormOfStudy(models.Model):
     )
     semesters = models.PositiveSmallIntegerField(
         verbose_name=_('Number of semesters'),
+        help_text=_("Total number of semesters, later if you specify fewer Semester time intervals than Number of semesters they will cycle from beginning automatically"),
         default=8,
     )
     priority = models.PositiveSmallIntegerField(
@@ -266,27 +268,14 @@ class FormOfStudySemester(models.Model):
     )
     date_range = YearlessDateRangeField(
         verbose_name=_('Default time interval'),
-        #~ default=None,
-        #~ blank=True,
-        #~ null=True,
     )
 
-    def clean(self):
-        objects = FormOfStudySemester.objects.exclude(id=self.id)
-        arr = objects.filter(form=self.form).all()
-        for i in arr:
-            b = self.date_range is not None and i.date_range is not None
-            if b and self.date_range.is_intersecting(i.date_range):
-                error = _("Date ranges are intersecting")
-                raise ValidationError(error)
-        super(FormOfStudySemester, self).clean()
-
     def __str__(self):
-        return str(_("Semester"))
+        return str(_("Default time interval for semester"))
 
     class Meta:
-        verbose_name = _('Semester')
-        verbose_name_plural = _('Semesters')
+        verbose_name = _('Semester time interval')
+        verbose_name_plural = _('Semester time intervals')
 
 class GroupStream(ReadOnlyOnExistForeignKey, models.Model):
     specialty = models.ForeignKey(
@@ -307,34 +296,44 @@ class GroupStream(ReadOnlyOnExistForeignKey, models.Model):
     )
 
     important_fields = ['year', 'form']
-    related_models = [('SemesterSchedule', 'group')]
+    related_models = [('timetableapp', 'GroupStreamSemester', 'group')]
 
     def save(self, *args, **kwargs):
+        form = None
+        try: form = self.form
+        except FormOfStudy.DoesNotExist as e: pass
         new = False
         if self.pk is None: new = True
         super(GroupStream, self).save(*args, **kwargs)
-        if new:
-            st1 = self.form.start_date_first
-            et1 = self.form.end_date_first
-            st2 = self.form.start_date_second
-            et2 = self.form.end_date_second
-            if st1 and et1 and st2 and et2:
+        if new and form:
+            objs = FormOfStudySemester.objects.filter(form=form)
+            if objs.exists():
+                pass
+                count = objs.count()
+                year = self.year
                 semesters = self.form.semesters
+                last_date = date(year - 1, 1, 1)
                 for i in range(1, semesters + 1):
-                    y = int(self.year + i / 2)
-                    std = st1 if i % 2 else st2
-                    std = datetime.date(y, std.month, std.day)
-                    etd = et1 if i % 2 else et2
-                    etd = datetime.date(y, etd.month, etd.day)
-                    if etd < std:
-                        etd = datetime.date(y + 1, etd.month, etd.day)
+                    dr = objs[(i - 1) % count].date_range
+                    std = date(year, dr.start.month, dr.start.day)
+                    while std < last_date:
+                        year += 1
+                        std = date(year, dr.start.month, dr.start.day)
+                    last_date = std
+                    etd = date(year, dr.end.month, dr.end.day)
+                    while etd < last_date:
+                        year += 1
+                        etd = date(year, dr.end.month, dr.end.day)
+                    last_date = etd
                     args_dict = {
                         'group': self,
                         'semester': i,
                         'start_date': std,
                         'end_date': etd,
                     }
-                    SemesterSchedule.objects.create(**args_dict)
+                    GroupStreamSemester.objects.create(**args_dict)
+        if not Group.objects.filter(group_stream=self).exists():
+            Group.objects.create(group_stream=self)
 
     def __str__(self):
         return '%s-%s%s' % (
@@ -348,7 +347,7 @@ class GroupStream(ReadOnlyOnExistForeignKey, models.Model):
         verbose_name_plural = _('Group streams')
         unique_together = [['specialty', 'year', 'form']]
 
-class SemesterSchedule(models.Model):
+class GroupStreamSemester(models.Model):
     group = models.ForeignKey(
         'GroupStream',
         on_delete=models.CASCADE,
@@ -378,7 +377,7 @@ class SemesterSchedule(models.Model):
         if self.start_date and self.end_date and self.start_date > self.end_date:
             error = _("End date should be greater than start date.")
             raise ValidationError(error)
-        super(SemesterSchedule, self).clean()
+        super(GroupStreamSemester, self).clean()
 
     def __str__(self):
         s = _('{semester} semester')
@@ -386,11 +385,11 @@ class SemesterSchedule(models.Model):
         return '%s - %s' % (self.group, string)
 
     class Meta:
-        verbose_name = _('Semester schedule')
-        verbose_name_plural = _('Semester schedule')
+        verbose_name = _('Group stream semester')
+        verbose_name_plural = _('Group stream semesters')
         unique_together = [['group', 'semester']]
 
-class Group(ReadOnlyOnExistForeignKey, models.Model):
+class Group(ReadOnlyOnExistForeignKey, MPTTModel):
     def generate_number_choices():
         l = [(None,'-')]
         for x in range(1, 9):
@@ -399,18 +398,19 @@ class Group(ReadOnlyOnExistForeignKey, models.Model):
 
     NUMBER_CHOICES = generate_number_choices()
 
-    group_stream = models.ForeignKey(
-        'GroupStream',
+    parent = TreeForeignKey(
+        'self',
         on_delete=models.CASCADE,
-        verbose_name=_('Group stream'),
+        verbose_name=_('Parent node'),
         default=None,
         blank=True,
         null=True,
     )
-    parent = models.ForeignKey(
-        'self',
+    group_stream = models.ForeignKey(
+        'GroupStream',
         on_delete=models.CASCADE,
-        verbose_name=_('Parent node'),
+        verbose_name=_('Group stream'),
+        help_text=_('If Parent node is set, this field fills automatically while saving.'),
         default=None,
         blank=True,
         null=True,
@@ -425,22 +425,9 @@ class Group(ReadOnlyOnExistForeignKey, models.Model):
 
     important_fields = ['parent']
     related_models = [
-        ('CurriculumEntry', 'group'),
-        ('CurriculumEntryTeacher', 'group'),
+        ('timetableapp', 'CurriculumEntry', 'group'),
+        ('timetableapp', 'CurriculumEntryTeacher', 'group'),
     ]
-
-    #~ def __init__(self, *args, **kwargs):
-        #~ super(Group, self).__init__(*args, **kwargs)
-        #~ self.__important_fields = ['parent']
-        #~ for field in self.__important_fields:
-            #~ setattr(self, '__original_%s' % field, getattr(self, field))
-
-    #~ def has_changed(self):
-        #~ for field in self.__important_fields:
-            #~ orig = '__original_%s' % field
-            #~ if getattr(self, orig) != getattr(self, field):
-                #~ return True
-        #~ return False
 
     def save(self, *args, **kwargs):
         parent = None
@@ -453,14 +440,10 @@ class Group(ReadOnlyOnExistForeignKey, models.Model):
         super(Group, self).save(*args, **kwargs)
 
     def clean(self):
-        #~ ceb = CurriculumEntry.objects.filter(group=self).exists()
-        #~ cetb = CurriculumEntryTeacher.objects.filter(group=self).exists()
-        #~ if ceb and cetb and self.has_changed():
-            #~ error = _("Parent node can't be changed when {} and {} exists")
-            #~ cevn = CurriculumEntry._meta.verbose_name
-            #~ cetvn = CurriculumEntryTeacher._meta.verbose_name
-            #~ raise ValidationError(error.format(cevn, cetvn))
         if self.parent is not None:
+            if self == self.parent:
+                error = _("Group can't be child of itself")
+                raise ValidationError(error)
             if self.number is None:
                 error = _("Number may not be empty when having parent group class.")
                 raise ValidationError(error)
@@ -469,23 +452,6 @@ class Group(ReadOnlyOnExistForeignKey, models.Model):
                 error = _("Group can't have parent group with such depth.")
                 raise ValidationError(error)
         super(Group, self).clean()
-
-    def validate_unique(self, exclude=None):
-        group_stream = None
-        try: group_stream = self.group_stream
-        except Group.DoesNotExist as e: pass
-        parent = None
-        try: parent = self.parent
-        except Group.DoesNotExist as e: pass
-        if group_stream and parent:
-            args = {
-                'group_stream': self.group_stream,
-                'parent': parent,
-                'number': self.number,
-            }
-            if Group.objects.exclude(id=self.id).filter(**args).exists():
-                raise ValidationError(_("Duplicate group node"))
-        super(Group, self).validate_unique(exclude)
 
     def get_path_to_root(self):
         arr = []
@@ -523,7 +489,6 @@ class Group(ReadOnlyOnExistForeignKey, models.Model):
         return max_depth
 
     def calculate_max_depth_of_childs(self):
-        print("calculate_max_depth_of_childs(%s)" % self)
         return 1 + len(self.get_path_to_root()) + self.calculate_node_height()
 
     def __str__(self):
@@ -537,9 +502,10 @@ class Group(ReadOnlyOnExistForeignKey, models.Model):
     class Meta:
         verbose_name = _('Group')
         verbose_name_plural = _('Groups')
-        unique_together = [[
-            'group_stream', 'parent', 'number'
-        ]]
+        unique_together = [['parent', 'number']]
+
+    class MPTTMeta:
+        order_insertion_by = ['number']
 
 class Curriculum(models.Model):
     group = models.ForeignKey(

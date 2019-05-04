@@ -1,0 +1,439 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-05-04 10:24+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n % 1 == 0 && n % 10 == 1 && n % 100 != "
+"11 ? 0 : n % 1 == 0 && n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % "
+"100 > 14) ? 1 : n % 1 == 0 && (n % 10 ==0 || (n % 10 >=5 && n % 10 <=9) || "
+"(n % 100 >=11 && n % 100 <=14 )) ? 2: 3);\n"
+
+#: django_improvements/models.py:44
+msgid "{} fields can't be changed when {} exists"
+msgstr "{} поля не могут быть изменены когда существуют {}"
+
+#: django_improvements/models.py:46 django_improvements/models.py:48
+msgid " and "
+msgstr " та "
+
+#: django_improvements/templates/admin/edit_inline/tabular.html:20
+msgid "Delete?"
+msgstr "Видалити?"
+
+#: django_improvements/templates/admin/edit_inline/tabular.html:34
+msgid "Change"
+msgstr "Змінити"
+
+#: django_improvements/templates/admin/edit_inline/tabular.html:34
+msgid "View"
+msgstr "Переглянути"
+
+#: django_improvements/templates/admin/edit_inline/tabular.html:36
+msgid "View on site"
+msgstr "Переглянути на сайті"
+
+#: timetableapp/admin.py:66 timetableapp/admin.py:162 timetableapp/models.py:40
+#: timetableapp/models.py:47 timetableapp/models.py:162
+msgid "Faculty"
+msgstr "Факультет"
+
+#: timetableapp/admin.py:136 timetableapp/models.py:287
+msgid "Year"
+msgstr "Рік"
+
+#: timetableapp/forms.py:17
+msgid "Date ranges are overlapping"
+msgstr "Діапазони дат перекриваються"
+
+#: timetableapp/forms.py:21
+msgid "You must have at least one {}"
+msgstr "Ви повинні мати принаймні одну {}"
+
+#: timetableapp/forms.py:26
+msgid "You may not have {} more than {}"
+msgstr "Ви не можете мати {} більше, ніж {}"
+
+#: timetableapp/models.py:23 timetableapp/models.py:50
+#: timetableapp/models.py:72 timetableapp/models.py:146
+#: timetableapp/models.py:233
+msgid "Name"
+msgstr "Ім'я"
+
+#: timetableapp/models.py:28 timetableapp/models.py:55
+#: timetableapp/models.py:155
+msgid "Abbreviation"
+msgstr "Абревіатура"
+
+#: timetableapp/models.py:41
+msgid "Faculties"
+msgstr "Факультети"
+
+#: timetableapp/models.py:67 timetableapp/models.py:79
+#: timetableapp/models.py:126
+msgid "Department"
+msgstr "Кафедра"
+
+#: timetableapp/models.py:68
+msgid "Departments"
+msgstr "Кафедри"
+
+#: timetableapp/models.py:89 timetableapp/models.py:602
+msgid "Subject"
+msgstr "Предмет"
+
+#: timetableapp/models.py:90 timetableapp/models.py:544
+msgid "Subjects"
+msgstr "Предмети"
+
+#: timetableapp/models.py:94
+msgid "First name"
+msgstr "Ім'я"
+
+#: timetableapp/models.py:99
+msgid "Middle name"
+msgstr "По батькові"
+
+#: timetableapp/models.py:104
+msgid "Last name"
+msgstr "Прізвище"
+
+#: timetableapp/models.py:113 timetableapp/models.py:121
+msgid "Person"
+msgstr "Особа"
+
+#: timetableapp/models.py:114
+msgid "Persons"
+msgstr "Особи"
+
+#: timetableapp/models.py:141 timetableapp/models.py:648
+#: timetableapp/models.py:748
+msgid "Teacher"
+msgstr "Вчитель"
+
+#: timetableapp/models.py:142 timetableapp/models.py:549
+msgid "Teachers"
+msgstr "Вчителі"
+
+#: timetableapp/models.py:151 timetableapp/models.py:177
+#: timetableapp/models.py:220 timetableapp/models.py:419
+msgid "Number"
+msgstr "Числа"
+
+#: timetableapp/models.py:172 timetableapp/models.py:284
+msgid "Specialty"
+msgstr "Спеціальність"
+
+#: timetableapp/models.py:173
+msgid "Specialties"
+msgstr "Спеціальності"
+
+#: timetableapp/models.py:181
+msgid "Address"
+msgstr "Адреса"
+
+#: timetableapp/models.py:189
+msgid "Longitude"
+msgstr "Довгота"
+
+#: timetableapp/models.py:197
+#, fuzzy
+#| msgid "Longitude"
+msgid "Latitude"
+msgstr "Довгота"
+
+#: timetableapp/models.py:206
+#, python-brace-format
+msgid "{building} building"
+msgstr ""
+
+#: timetableapp/models.py:209 timetableapp/models.py:217
+msgid "Building"
+msgstr ""
+
+#: timetableapp/models.py:210
+msgid "Buildings"
+msgstr ""
+
+#: timetableapp/models.py:228 timetableapp/models.py:739
+msgid "Classroom"
+msgstr ""
+
+#: timetableapp/models.py:229
+msgid "Classrooms"
+msgstr ""
+
+#: timetableapp/models.py:238
+msgid "Suffix"
+msgstr ""
+
+#: timetableapp/models.py:244
+msgid "Number of semesters"
+msgstr ""
+
+#: timetableapp/models.py:245
+msgid ""
+"Total number of semesters, later if you specify fewer Semester time "
+"intervals than Number of semesters they will cycle from beginning "
+"automatically"
+msgstr ""
+
+#: timetableapp/models.py:249
+msgid "Priority"
+msgstr ""
+
+#: timetableapp/models.py:258 timetableapp/models.py:266
+#: timetableapp/models.py:294
+msgid "Form of study"
+msgstr ""
+
+#: timetableapp/models.py:259
+msgid "Forms of study"
+msgstr ""
+
+#: timetableapp/models.py:270
+msgid "Default time interval"
+msgstr ""
+
+#: timetableapp/models.py:274
+msgid "Default time interval for semester"
+msgstr ""
+
+#: timetableapp/models.py:277
+msgid "Semester time interval"
+msgstr ""
+
+#: timetableapp/models.py:278
+msgid "Semester time intervals"
+msgstr ""
+
+#: timetableapp/models.py:346 timetableapp/models.py:354
+#: timetableapp/models.py:412 timetableapp/models.py:514
+msgid "Group stream"
+msgstr ""
+
+#: timetableapp/models.py:347
+msgid "Group streams"
+msgstr ""
+
+#: timetableapp/models.py:358 timetableapp/models.py:517
+msgid "Semester"
+msgstr ""
+
+#: timetableapp/models.py:363
+msgid "Start date"
+msgstr ""
+
+#: timetableapp/models.py:370
+msgid "End date"
+msgstr ""
+
+#: timetableapp/models.py:378
+msgid "End date should be greater than start date."
+msgstr ""
+
+#: timetableapp/models.py:383 timetableapp/models.py:521
+#: timetableapp/models.py:585 timetableapp/models.py:612
+#: timetableapp/models.py:789
+#, python-brace-format
+msgid "{semester} semester"
+msgstr ""
+
+#: timetableapp/models.py:388
+msgid "Group stream semester"
+msgstr ""
+
+#: timetableapp/models.py:389
+msgid "Group stream semesters"
+msgstr ""
+
+#: timetableapp/models.py:404
+msgid "Parent node"
+msgstr ""
+
+#: timetableapp/models.py:413
+msgid "If Parent node is set, this field fills automatically while saving."
+msgstr ""
+
+#: timetableapp/models.py:445
+msgid "Group can't be child of itself"
+msgstr ""
+
+#: timetableapp/models.py:448
+msgid "Number may not be empty when having parent group class."
+msgstr ""
+
+#: timetableapp/models.py:452
+msgid "Group can't have parent group with such depth."
+msgstr ""
+
+#: timetableapp/models.py:503 timetableapp/models.py:539
+#: timetableapp/models.py:636 timetableapp/models.py:727
+msgid "Group"
+msgstr ""
+
+#: timetableapp/models.py:504
+msgid "Groups"
+msgstr ""
+
+#: timetableapp/models.py:525 timetableapp/models.py:534
+msgid "Curriculum"
+msgstr ""
+
+#: timetableapp/models.py:526
+msgid "Curriculums"
+msgstr ""
+
+#: timetableapp/models.py:552
+msgid "Number of lectures"
+msgstr ""
+
+#: timetableapp/models.py:555
+msgid "Number of practices"
+msgstr ""
+
+#: timetableapp/models.py:558
+msgid "Number of laboratory"
+msgstr ""
+
+#: timetableapp/models.py:561
+msgid "Amount of independent work"
+msgstr ""
+
+#: timetableapp/models.py:572
+msgid "Group must be child of or same as group in curriculum"
+msgstr ""
+
+#: timetableapp/models.py:589 timetableapp/models.py:596
+#: timetableapp/models.py:630 timetableapp/models.py:721
+msgid "Curriculum entry"
+msgstr ""
+
+#: timetableapp/models.py:590
+msgid "Curriculum entries"
+msgstr ""
+
+#: timetableapp/models.py:617
+msgid "Subject for curriculum entry"
+msgstr ""
+
+#: timetableapp/models.py:618
+msgid "Subjects for curriculum entries"
+msgstr ""
+
+#: timetableapp/models.py:640
+msgid "Responsibility"
+msgstr ""
+
+#: timetableapp/models.py:661
+msgid "Group must be child of or same as group in entry"
+msgstr ""
+
+#: timetableapp/models.py:681
+msgid "Duplicate teacher for curriculum entry by group {}."
+msgstr ""
+
+#: timetableapp/models.py:692
+msgid "Teacher for curriculum entry"
+msgstr ""
+
+#: timetableapp/models.py:693
+msgid "Teachers for curriculum entries"
+msgstr ""
+
+#: timetableapp/models.py:702
+msgid "numerator"
+msgstr ""
+
+#: timetableapp/models.py:702
+msgid "denominator"
+msgstr ""
+
+#: timetableapp/models.py:704
+msgid "mon"
+msgstr ""
+
+#: timetableapp/models.py:704
+msgid "tue"
+msgstr ""
+
+#: timetableapp/models.py:704
+msgid "wed"
+msgstr ""
+
+#: timetableapp/models.py:704
+msgid "thu"
+msgstr ""
+
+#: timetableapp/models.py:704
+msgid "fri"
+msgstr ""
+
+#: timetableapp/models.py:705
+msgid "sat"
+msgstr ""
+
+#: timetableapp/models.py:705
+msgid "sun"
+msgstr ""
+
+#: timetableapp/models.py:707
+#, python-brace-format
+msgid "{lesson} lesson"
+msgstr ""
+
+#: timetableapp/models.py:731
+msgid "Number of lesson"
+msgstr ""
+
+#: timetableapp/models.py:764
+msgid "Group must be child of or same as group in curriculum entry"
+msgstr ""
+
+#: timetableapp/models.py:784
+msgid "Duplicate timetable entry by group {}."
+msgstr ""
+
+#: timetableapp/models.py:796
+msgid "Timetable entry"
+msgstr ""
+
+#: timetableapp/models.py:797
+msgid "Timetable entries"
+msgstr ""
+
+#: yearlessdate/forms.py:10
+msgid "Day"
+msgstr ""
+
+#: yearlessdate/forms.py:11
+msgid "Month"
+msgstr ""
+
+#: yearlessdate/forms.py:45 yearlessdate/forms.py:88
+msgid "Invalid date."
+msgstr ""
+
+#: yearlessdate/helpers.py:22
+msgid "Cannot create YearlessDate object with a month value of {}."
+msgstr ""
+
+#: yearlessdate/helpers.py:26
+msgid "Cannot create YearlessDate object - invalid day value {} for month {}."
+msgstr ""
+
+#: yearlessdate/helpers.py:68
+msgid "Start date and end date must be YearlessDate"
+msgstr ""

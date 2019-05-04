@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.apps import apps
 
 class PositiveTinyIntegerField(models.PositiveSmallIntegerField):
     description = "Tiny Integer Field"
@@ -33,7 +33,7 @@ class ReadOnlyOnExistForeignKey(object):
     def clean(self, *args, **kwargs):
         models = []
         for i in self.__related_models:
-            models.append((apps.get_model('timetableapp', i[0]), i[1]))
+            models.append((apps.get_model(i[0], i[1]), i[2]))
         fields = self.__important_fields
         exists = False
         for i in models:

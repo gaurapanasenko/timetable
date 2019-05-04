@@ -1,13 +1,11 @@
-from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
+from django.contrib import admin
 from django.urls import path
-from django.shortcuts import render
-from django.shortcuts import redirect
 
 from import_export.admin import ImportExportModelAdmin
-
-#~ from .forms import SubjectForm
+from mptt.admin import MPTTModelAdmin
 
 from .settings import *
 
@@ -25,8 +23,10 @@ from .models import Building
 from .models import Classroom
 from .models import Curriculum
 from .models import CurriculumEntry
-from .models import SemesterSchedule
+from .models import GroupStreamSemester
 from .models import TimetableEntry
+
+from .forms import FormOfStudySemesterFormset
 
 class CurriculumEntryInline(admin.TabularInline):
     model = CurriculumEntry
@@ -56,7 +56,10 @@ class FacultyAdmin(ImportExportModelAdmin):
 @admin.register(Department)
 class DepartmentAdmin(ImportExportModelAdmin):
     list_display = ('name', 'faculty', 'abbreviation',)
-    search_fields = ('name', 'faculty', 'abbreviation',)
+    search_fields = (
+        'name', 'faculty__name',
+        'faculty__abbreviation', 'abbreviation',
+    )
     list_filter = ('faculty', )
 
 class DepartmentFacultyFilter(admin.SimpleListFilter):
@@ -74,7 +77,10 @@ class DepartmentFacultyFilter(admin.SimpleListFilter):
 @admin.register(Subject)
 class SubjectAdmin(ImportExportModelAdmin):
     list_display = ('name', 'department',)
-    search_fields = ('name', 'department',)
+    search_fields = (
+        'name', 'department__name', 'department__faculty__name',
+        'department__faculty__abbreviation', 'department__abbreviation',
+    )
     list_filter = (DepartmentFacultyFilter,)
     raw_id_fields = ('department',)
     #~ form = SubjectForm
@@ -87,14 +93,21 @@ class PersonAdmin(ImportExportModelAdmin):
 @admin.register(Teacher)
 class TeacherAdmin(ImportExportModelAdmin):
     list_display = ('person', 'department',)
-    search_fields = ('person', 'department',)
+    search_fields = (
+        'person__first_name', 'person__middle_name', 'person__last_name',
+        'department__name', 'department__faculty__name',
+        'department__faculty__abbreviation', 'department__abbreviation',
+    )
     list_filter = (DepartmentFacultyFilter,)
     raw_id_fields = ('department',)
 
 @admin.register(Specialty)
 class SpecialtyAdmin(ImportExportModelAdmin):
     list_display = ('name', 'number', 'abbreviation', 'faculty',)
-    search_fields = ('name', 'number', 'abbreviation', 'faculty',)
+    search_fields = (
+        'name', 'number', 'abbreviation',
+        'faculty__name', 'faculty__abbreviation',
+    )
     list_filter = ('faculty',)
 
 @admin.register(Building)
@@ -105,18 +118,19 @@ class BuildingAdmin(ImportExportModelAdmin):
 @admin.register(Classroom)
 class ClassroomAdmin(ImportExportModelAdmin):
     list_display = ('building', 'number',)
-    search_fields = ('building', 'number',)
-    list_filter = ('building', )
+    search_fields = ('building__number', 'building__address', 'number',)
+    list_filter = ('building',)
 
 class FormOfStudySemesterInline(admin.TabularInline):
     model = FormOfStudySemester
+    formset = FormOfStudySemesterFormset
 
 @admin.register(FormOfStudy)
 class FormOfStudyAdmin(ImportExportModelAdmin):
     list_display = ('name', 'suffix', 'semesters', 'priority',)
     search_fields = ('name', 'suffix', 'semesters', 'priority',)
     list_filter = ('semesters', 'priority',)
-    inlines = [FormOfStudySemesterInline]
+    inlines = [FormOfStudySemesterInline,]
 
 class SpecialtyYearFilter(admin.SimpleListFilter):
     title = _('Year')
@@ -158,24 +172,40 @@ class SpecialtyFacultyFilter(admin.SimpleListFilter):
                 return queryset.filter(specialty__in=arr)
             except ValueError: pass
 
-class SemesterScheduleInline(admin.TabularInline):
-    model = SemesterSchedule
+class GroupStreamSemesterInline(admin.TabularInline):
+    model = GroupStreamSemester
+
+@admin.register(GroupStream)
+class GroupStreamAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'specialty', 'year', 'form',)
+    search_fields = (
+        'specialty__name', 'specialty__number',
+        'specialty__abbreviation',
+        'specialty__faculty__name', 'specialty__faculty__abbreviation',
+        'year', 'form__name', 'form__suffix',
+        'form__semesters', 'form__priority',
+    )
+    list_filter = (SpecialtyFacultyFilter, 'form', SpecialtyYearFilter,)
+    raw_id_fields = ('specialty',)
+    inlines = [
+        GroupStreamSemesterInline,
+    ]
 
 class GroupInline(admin.TabularInline):
     model = Group
 
-@admin.register(GroupStream)
-class GroupStreamAdmin(admin.ModelAdmin):
-    list_display = ('specialty', 'year', 'form',)
-    search_fields = ('specialty', 'year', 'form',)
-    list_filter = (SpecialtyFacultyFilter, 'form', SpecialtyYearFilter,)
-    raw_id_fields = ('specialty',)
-    inlines = [
-        SemesterScheduleInline,
-        GroupInline,
-    ]
+@admin.register(Group)
+class GroupAdmin(MPTTModelAdmin):
+    #~ search_fields = ('specialty', 'year', 'form',)
+    #~ list_filter = (SpecialtyFacultyFilter, 'form', SpecialtyYearFilter,)
+    #~ raw_id_fields = ('specialty',)
+    inlines = [GroupInline,]
 
-admin.site.register(Group)
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return ['group_stream', 'parent', 'number',]
+        else:
+            return []
 
 admin.site.register(Curriculum, CurriculumAdmin)
 

@@ -34,7 +34,6 @@ class YearlessDate(object):
         return '{} {}'.format(self.day, self.month_name)
 
     def __eq__(self, other):
-        if not isinstance(other, YearlessDate): return False
         return (self.day == other.day) and (self.month == other.month)
 
     def __gt__(self, other):
@@ -69,7 +68,7 @@ class YearlessDateRange(object):
             error = _("Start date and end date must be YearlessDate")
             raise ValueError(error.format(self.month))
 
-    def is_intersecting(self, other):
+    def are_overlap(self, other):
         array = list(enumerate([
             self.start, self.end,
             other.start, other.end
