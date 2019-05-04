@@ -65,7 +65,7 @@ class YearlessDateRange(object):
         sdi = isinstance(self.start, YearlessDate)
         edi = isinstance(self.end, YearlessDate)
         if not sdi or not edi:
-            error = _("Start date and end date must be YearlessDate")
+            error = _("Start date and end date must be YearlessDate type.")
             raise ValueError(error.format(self.month))
 
     def are_overlap(self, other):

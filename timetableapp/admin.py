@@ -22,30 +22,30 @@ from .models import Group
 from .models import Building
 from .models import Classroom
 from .models import Curriculum
-from .models import CurriculumEntry
+from .models import CurriculumRecord
 from .models import GroupStreamSemester
-from .models import TimetableEntry
+from .models import TimetableRecording
 
 from .forms import FormOfStudySemesterFormset
 
-class CurriculumEntryInline(admin.TabularInline):
-    model = CurriculumEntry
+class CurriculumRecordInline(admin.TabularInline):
+    model = CurriculumRecord
 
 class CurriculumAdmin(admin.ModelAdmin):
     inlines = [
-        CurriculumEntryInline,
+        CurriculumRecordInline,
     ]
 
-class CurriculumEntrySubjectInline(admin.TabularInline):
-    model = CurriculumEntry.subjects.through
+class CurriculumRecordSubjectInline(admin.TabularInline):
+    model = CurriculumRecord.subjects.through
 
-class CurriculumEntryTeacherInline(admin.TabularInline):
-    model = CurriculumEntry.teachers.through
+class CurriculumRecordTeacherInline(admin.TabularInline):
+    model = CurriculumRecord.teachers.through
 
-class CurriculumEntryAdmin(admin.ModelAdmin):
+class CurriculumRecordAdmin(admin.ModelAdmin):
     inlines = [
-        CurriculumEntrySubjectInline,
-        CurriculumEntryTeacherInline,
+        CurriculumRecordSubjectInline,
+        CurriculumRecordTeacherInline,
     ]
 
 @admin.register(Faculty)
@@ -209,6 +209,6 @@ class GroupAdmin(MPTTModelAdmin):
 
 admin.site.register(Curriculum, CurriculumAdmin)
 
-admin.site.register(CurriculumEntry, CurriculumEntryAdmin)
+admin.site.register(CurriculumRecord, CurriculumRecordAdmin)
 
-admin.site.register(TimetableEntry)
+admin.site.register(TimetableRecording)

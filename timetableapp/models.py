@@ -242,7 +242,7 @@ class FormOfStudy(models.Model):
     )
     semesters = models.PositiveSmallIntegerField(
         verbose_name=_('Number of semesters'),
-        help_text=_("Total number of semesters, later if you specify fewer Semester time intervals than Number of semesters they will cycle from beginning automatically"),
+        help_text=_("Total number of semesters, later if you specify fewer Semester date ranges than Number of semesters they will cycle from beginning automatically"),
         default=8,
     )
     priority = models.PositiveSmallIntegerField(
@@ -267,15 +267,15 @@ class FormOfStudySemester(models.Model):
         default={'priority': 1},
     )
     date_range = YearlessDateRangeField(
-        verbose_name=_('Default time interval'),
+        verbose_name=_('Default date range'),
     )
 
     def __str__(self):
-        return str(_("Default time interval for semester"))
+        return str(_("Default date range for semester"))
 
     class Meta:
-        verbose_name = _('Semester time interval')
-        verbose_name_plural = _('Semester time intervals')
+        verbose_name = _('Semester date range')
+        verbose_name_plural = _('Semester date ranges')
 
 class GroupStream(ReadOnlyOnExistForeignKey, models.Model):
     specialty = models.ForeignKey(
@@ -425,8 +425,8 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
 
     important_fields = ['parent']
     related_models = [
-        ('timetableapp', 'CurriculumEntry', 'group'),
-        ('timetableapp', 'CurriculumEntryTeacher', 'group'),
+        ('timetableapp', 'CurriculumRecord', 'group'),
+        ('timetableapp', 'CurriculumRecordTeacher', 'group'),
     ]
 
     def save(self, *args, **kwargs):
@@ -442,10 +442,10 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
     def clean(self):
         if self.parent is not None:
             if self == self.parent:
-                error = _("Group can't be child of itself")
+                error = _("Group can't be child of itself.")
                 raise ValidationError(error)
             if self.number is None:
-                error = _("Number may not be empty when having parent group class.")
+                error = _("Number may not be empty when Parent node is set.")
                 raise ValidationError(error)
             depth = self.calculate_max_depth_of_childs()
             if depth > MAX_GROUP_TREE_HEIGHT:
@@ -527,7 +527,7 @@ class Curriculum(models.Model):
         unique_together = [['group', 'semester']]
 
 
-class CurriculumEntry(models.Model):
+class CurriculumRecord(models.Model):
     curriculum = models.ForeignKey(
         'Curriculum',
         on_delete=models.CASCADE,
@@ -540,12 +540,12 @@ class CurriculumEntry(models.Model):
     )
     subjects = models.ManyToManyField(
         Subject,
-        through='CurriculumEntrySubject',
+        through='CurriculumRecordSubject',
         verbose_name=_('Subjects'),
     )
     teachers = models.ManyToManyField(
         Teacher,
-        through='CurriculumEntryTeacher',
+        through='CurriculumRecordTeacher',
         verbose_name=_('Teachers'),
     )
     lectures = models.PositiveSmallIntegerField(
@@ -569,9 +569,9 @@ class CurriculumEntry(models.Model):
         try: group = self.group
         except Group.DoesNotExist as e: pass
         if curriculum and group and group.group_stream != curriculum.group:
-            error = _("Group must be child of or same as group in curriculum")
+            error = _("Group must be child of or same as group in curriculum.")
             raise ValidationError(error)
-        super(CurriculumEntry, self).clean()
+        super(CurriculumRecord, self).clean()
 
     def get_semester(self):
         return self.curriculum.semester
@@ -586,14 +586,14 @@ class CurriculumEntry(models.Model):
         return '%s - %s%s' % (self.group, semester, subjects)
 
     class Meta:
-        verbose_name = _('Curriculum entry')
-        verbose_name_plural = _('Curriculum entries')
+        verbose_name = _('Curriculum record')
+        verbose_name_plural = _('Curriculum records')
 
-class CurriculumEntrySubject(models.Model):
-    entry = models.ForeignKey(
-        'CurriculumEntry',
+class CurriculumRecordSubject(models.Model):
+    record = models.ForeignKey(
+        'CurriculumRecord',
         on_delete=models.CASCADE,
-        verbose_name=_('Curriculum entry'),
+        verbose_name=_('Curriculum record'),
     )
 
     subject = models.ForeignKey(
@@ -603,10 +603,10 @@ class CurriculumEntrySubject(models.Model):
     )
 
     def get_group(self):
-        return self.entry.group
+        return self.record.group
 
     def get_semester(self):
-        return self.entry.get_semester()
+        return self.record.get_semester()
 
     def __str__(self):
         s = _('{semester} semester')
@@ -614,20 +614,20 @@ class CurriculumEntrySubject(models.Model):
         return '%s - %s - %s' % (self.get_group(), string, self.subject)
 
     class Meta:
-        verbose_name = _('Subject for curriculum entry')
-        verbose_name_plural = _('Subjects for curriculum entries')
+        verbose_name = _('Subject for curriculum record')
+        verbose_name_plural = _('Subjects for curriculum records')
 
-class CurriculumEntryTeacher(models.Model):
+class CurriculumRecordTeacher(models.Model):
     RESPONSIBILITY_CHOICES = [
         (0, 'Lectures'),
         (1, 'Practices'),
         (2, 'Laboratory'),
     ]
 
-    entry = models.ForeignKey(
-        'CurriculumEntry',
+    record = models.ForeignKey(
+        'CurriculumRecord',
         on_delete=models.CASCADE,
-        verbose_name=_('Curriculum entry'),
+        verbose_name=_('Curriculum record'),
     )
 
     group = models.ForeignKey(
@@ -649,38 +649,38 @@ class CurriculumEntryTeacher(models.Model):
     )
 
     def clean(self):
-        entry = None
+        record = None
         group = None
-        try: entry = self.entry
-        except CurriculumEntry.DoesNotExist as e: pass
+        try: record = self.record
+        except CurriculumRecord.DoesNotExist as e: pass
         try: group = self.group
         except Group.DoesNotExist as e: pass
-        if entry and group:
-            pg = entry.group
+        if record and group:
+            pg = record.group
             if pg != group and not group.is_child(pg):
-                error = _("Group must be child of or same as group in entry")
+                error = _("Group must be child of or same as group in record")
                 raise ValidationError(error)
-        super(CurriculumEntryTeacher, self).clean()
+        super(CurriculumRecordTeacher, self).clean()
 
     def validate_unique(self, exclude=None):
-        entry = None
+        record = None
         group = None
-        try: entry = self.entry
-        except CurriculumEntry.DoesNotExist as e: pass
+        try: record = self.record
+        except CurriculumRecord.DoesNotExist as e: pass
         try: group = self.group
         except Group.DoesNotExist as e: pass
-        if entry and group:
+        if record and group:
             arr = group.get_path_to_root_and_childs() if group else []
             args = {
-                'entry': entry,
+                'record': record,
                 'group__in': arr,
                 'responsibility': self.responsibility,
             }
-            f = CurriculumEntryTeacher.objects.exclude(id=self.id).filter(**args)
+            f = CurriculumRecordTeacher.objects.exclude(id=self.id).filter(**args)
             if f.exists():
-                error = _("Duplicate teacher for curriculum entry by group {}.")
+                error = _("Duplicate teacher for curriculum record through group {}.")
                 raise ValidationError(error.format(f.first().group))
-        super(CurriculumEntryTeacher, self).validate_unique(exclude)
+        super(CurriculumRecordTeacher, self).validate_unique(exclude)
 
     def __str__(self):
         rc = dict(self.RESPONSIBILITY_CHOICES)
@@ -689,14 +689,14 @@ class CurriculumEntryTeacher(models.Model):
         return '%s - %s - %s' % args
 
     class Meta:
-        verbose_name = _('Teacher for curriculum entry')
-        verbose_name_plural = _('Teachers for curriculum entries')
+        verbose_name = _('Teacher for curriculum record')
+        verbose_name_plural = _('Teachers for curriculum records')
         unique_together = [[
-            'entry', 'group', 'responsibility',
+            'record', 'group', 'responsibility',
         ]]
 
 
-class TimetableEntry(models.Model):
+class TimetableRecording(models.Model):
     def generate_lesson_choices():
         arr = []
         weeks = (_('numerator'), _('denominator'))
@@ -715,10 +715,10 @@ class TimetableEntry(models.Model):
 
     LESSON_CHOICES = generate_lesson_choices()
 
-    entry = models.ForeignKey(
-        'CurriculumEntry',
+    record = models.ForeignKey(
+        'CurriculumRecord',
         on_delete=models.CASCADE,
-        verbose_name=_('Curriculum entry'),
+        verbose_name=_('Curriculum record'),
     )
 
     group = models.ForeignKey(
@@ -728,7 +728,7 @@ class TimetableEntry(models.Model):
     )
 
     lesson = models.PositiveSmallIntegerField(
-        verbose_name=_('Number of lesson'),
+        verbose_name=_('Lesson number'),
         choices=LESSON_CHOICES,
         default=0,
     )
@@ -752,49 +752,49 @@ class TimetableEntry(models.Model):
     )
 
     def clean(self):
-        entry = None
+        record = None
         group = None
-        try: entry = self.entry
-        except CurriculumEntry.DoesNotExist as e: pass
+        try: record = self.record
+        except CurriculumRecord.DoesNotExist as e: pass
         try: group = self.group
         except Group.DoesNotExist as e: pass
-        if entry and group:
-            pg = entry.group
+        if record and group:
+            pg = record.group
             if pg != group and not group.is_child(pg):
-                error = _("Group must be child of or same as group in curriculum entry")
+                error = _("Group must be child of or same as group in curriculum record")
                 raise ValidationError(error)
-        super(TimetableEntry, self).clean()
+        super(TimetableRecord, self).clean()
 
     def validate_unique(self, exclude=None):
-        entry = None
+        record = None
         group = None
-        try: entry = self.entry
-        except CurriculumEntry.DoesNotExist as e: pass
+        try: record = self.record
+        except CurriculumRecord.DoesNotExist as e: pass
         try: group = self.group
         except Group.DoesNotExist as e: pass
         if group:
             arr = group.get_path_to_root_and_childs()
             args = {
-                'entry': entry,
+                'record': record,
                 'group__in': arr,
                 'lesson': self.lesson,
             }
-            f = TimetableEntry.objects.exclude(id=self.id).filter(**args)
+            f = TimetableRecord.objects.exclude(id=self.id).filter(**args)
             if f.exists():
-                error = _("Duplicate timetable entry by group {}.")
+                error = _("Duplicate timetable record trough group {}.")
                 raise ValidationError(error.format(f.first().group))
-        super(TimetableEntry, self).validate_unique(exclude)
+        super(TimetableRecord, self).validate_unique(exclude)
 
     def __str__(self):
         msg = _('{semester} semester')
-        semester = msg.format(semester=self.entry.getSemester())
+        semester = msg.format(semester=self.record.getSemester())
         lesson = dict(self.LESSON_CHOICES)[self.lesson]
-        args = (str(self.group), semester, lesson, self.entry.getSubjectName())
+        args = (str(self.group), semester, lesson, self.record.getSubjectName())
         return '%s - %s - %s - %s' % args
 
     class Meta:
-        verbose_name = _('Timetable entry')
-        verbose_name_plural = _('Timetable entries')
+        verbose_name = _('Timetable recording')
+        verbose_name_plural = _('Timetable recordings')
         unique_together = [
-            ['entry', 'group', 'lesson'], ['lesson', 'classroom']
+            ['record', 'group', 'lesson'], ['lesson', 'classroom']
         ]
