@@ -1,7 +1,8 @@
 from datetime import date
 
 from django.db import models
-from django.utils.translation import gettext_lazy as _
+from django.utils.text import format_lazy
+from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 
@@ -20,12 +21,12 @@ def year_max_value(value):
 
 class Faculty(models.Model):
     name = models.CharField(
-        verbose_name=_('Name'),
+        verbose_name=_('name'),
         max_length=128,
         unique=True,
     )
     abbreviation = models.CharField(
-        verbose_name=_('Abbreviation'),
+        verbose_name=_('abbreviation'),
         max_length=16,
         default=None,
         unique=True,
@@ -37,22 +38,22 @@ class Faculty(models.Model):
         return self.abbreviation if self.abbreviation else self.name
 
     class Meta:
-        verbose_name = _('Faculty')
-        verbose_name_plural = _('Faculties')
+        verbose_name = _('faculty')
+        verbose_name_plural = _('faculties')
 
 class Department(models.Model):
     faculty = models.ForeignKey(
         'Faculty',
         on_delete=models.PROTECT,
-        verbose_name=_('Faculty'),
+        verbose_name=_('faculty'),
     )
     name = models.CharField(
-        verbose_name=_('Name'),
+        verbose_name=_('name'),
         max_length=128,
         unique=True,
     )
     abbreviation = models.CharField(
-        verbose_name=_('Abbreviation'),
+        verbose_name=_('abbreviation'),
         max_length=16,
         default=None,
         unique=True,
@@ -64,19 +65,19 @@ class Department(models.Model):
         return self.abbreviation if self.abbreviation else self.name
 
     class Meta:
-        verbose_name = _('Department')
-        verbose_name_plural = _('Departments')
+        verbose_name = _('department')
+        verbose_name_plural = _('departments')
 
 class Subject(models.Model):
     name = models.CharField(
-        verbose_name=_('Name'),
+        verbose_name=_('name'),
         max_length=128,
         unique=True,
     )
     department = models.ForeignKey(
         'Department',
         on_delete=models.PROTECT,
-        verbose_name=_('Department'),
+        verbose_name=_('department'),
         default=None,
         null=True,
         blank=True,
@@ -86,22 +87,22 @@ class Subject(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = _('Subject')
-        verbose_name_plural = _('Subjects')
+        verbose_name = _('subject')
+        verbose_name_plural = _('subjects')
 
 class Person(models.Model):
     first_name = models.CharField(
-        verbose_name=_('First name'),
+        verbose_name=_('first name'),
         max_length=128,
     )
 
     middle_name = models.CharField(
-        verbose_name=_('Middle name'),
+        verbose_name=_('middle name'),
         max_length=128,
     )
 
     last_name = models.CharField(
-        verbose_name=_('Last name'),
+        verbose_name=_('last name'),
         max_length=128,
     )
 
@@ -110,26 +111,26 @@ class Person(models.Model):
         return '%s %s %s' % args
 
     class Meta:
-        verbose_name = _('Person')
-        verbose_name_plural = _('Persons')
+        verbose_name = _('person')
+        verbose_name_plural = _('persons')
         unique_together = [['first_name', 'middle_name', 'last_name']]
 
 class Teacher(models.Model):
     person = models.ForeignKey(
         'Person',
         on_delete=models.PROTECT,
-        verbose_name=_('Person'),
+        verbose_name=_('person'),
     )
     department = models.ForeignKey(
         'Department',
         on_delete=models.PROTECT,
-        verbose_name=_('Department'),
+        verbose_name=_('department'),
         default=None,
         null=True,
         blank=True,
     )
     #~ work_time = models.BigIntegerField(
-        #~ verbose_name=_('Work time'),
+        #~ verbose_name=_('work time'),
         #~ default=2**60,
         #~ validators=[MinValueValidator(0), MaxValueValidator(2**60)]
     #~ )
@@ -138,28 +139,28 @@ class Teacher(models.Model):
         return '%s' % self.person
 
     class Meta:
-        verbose_name = _('Teacher')
-        verbose_name_plural = _('Teachers')
+        verbose_name = _('teacher')
+        verbose_name_plural = _('teachers')
 
 class Specialty(models.Model):
     name = models.CharField(
-        verbose_name=_('Name'),
+        verbose_name=_('name'),
         max_length=128,
         unique=True,
     )
     number = models.PositiveSmallIntegerField(
-        verbose_name=_('Number'),
+        verbose_name=_('number'),
         unique=True,
     )
     abbreviation = models.CharField(
-        verbose_name=_('Abbreviation'),
+        verbose_name=_('abbreviation'),
         max_length=16,
         unique=True,
     )
     faculty = models.ForeignKey(
         'Faculty',
         on_delete=models.PROTECT,
-        verbose_name=_('Faculty'),
+        verbose_name=_('faculty'),
         default=None,
         null=True,
         blank=True,
@@ -169,16 +170,16 @@ class Specialty(models.Model):
         return "%s - %s" % (self.number, self.name)
 
     class Meta:
-        verbose_name = _('Specialty')
-        verbose_name_plural = _('Specialties')
+        verbose_name = _('specialty')
+        verbose_name_plural = _('specialties')
 
 class Building(models.Model):
     number = models.PositiveSmallIntegerField(
-        verbose_name=_('Number'),
+        verbose_name=_('number'),
         unique=True,
     )
     address = models.CharField(
-        verbose_name=_('Address'),
+        verbose_name=_('address'),
         max_length=128,
         unique=True,
         default=None,
@@ -186,7 +187,7 @@ class Building(models.Model):
         null=True,
     )
     longitude = models.DecimalField(
-        verbose_name=_('Longitude'),
+        verbose_name=_('longitude'),
         max_digits=9,
         decimal_places=6,
         default=None,
@@ -194,7 +195,7 @@ class Building(models.Model):
         null=True,
     )
     latitude = models.DecimalField(
-        verbose_name=_('Latitude'),
+        verbose_name=_('latitude'),
         max_digits=9,
         decimal_places=6,
         default=None,
@@ -203,21 +204,23 @@ class Building(models.Model):
     )
 
     def __str__(self):
-        return _('{building} building').format(building=self.number)
+        b = self.number
+        n = Building._meta.verbose_name
+        return str(format_lazy('{building} {name}', building=b, name=n))
 
     class Meta:
-        verbose_name = _('Building')
-        verbose_name_plural = _('Buildings')
+        verbose_name = _('building')
+        verbose_name_plural = _('buildings')
 
 
 class Classroom(models.Model):
     building = models.ForeignKey(
         'Building',
         on_delete=models.CASCADE,
-        verbose_name=_('Building'),
+        verbose_name=_('building'),
     )
     number = models.PositiveSmallIntegerField(
-        verbose_name=_('Number'),
+        verbose_name=_('number'),
         unique=True,
     )
 
@@ -225,28 +228,28 @@ class Classroom(models.Model):
         return '%s/%s' % (self.building.number, self.number)
 
     class Meta:
-        verbose_name = _('Classroom')
-        verbose_name_plural = _('Classrooms')
+        verbose_name = _('classroom')
+        verbose_name_plural = _('classrooms')
 
 class FormOfStudy(models.Model):
     name = models.CharField(
-        verbose_name=_('Name'),
+        verbose_name=_('name'),
         max_length=128,
         unique=True,
     )
     suffix = models.CharField(
-        verbose_name=_('Suffix'),
+        verbose_name=_('suffix'),
         max_length=16,
         blank=True,
         unique=True,
     )
     semesters = models.PositiveSmallIntegerField(
-        verbose_name=_('Number of semesters'),
-        help_text=_("Total number of semesters, later if you specify fewer Semester date ranges than Number of semesters they will cycle from beginning automatically"),
+        verbose_name=_('number of semesters'),
+        help_text=_("Total number of semesters, later if you specify fewer Semester date ranges than Number of semesters they will cycle from beginning automatically."),
         default=8,
     )
     priority = models.PositiveSmallIntegerField(
-        verbose_name=_('Priority'),
+        verbose_name=_('priority'),
         choices=((x, x) for x in range(1,10)),
         default=5,
     )
@@ -255,44 +258,44 @@ class FormOfStudy(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = _('Form of study')
-        verbose_name_plural = _('Forms of study')
+        verbose_name = _('form of study')
+        verbose_name_plural = _('forms of study')
         ordering = ['priority']
 
 class FormOfStudySemester(models.Model):
     form = models.ForeignKey(
         'FormOfStudy',
         on_delete=models.PROTECT,
-        verbose_name=_('Form of study'),
-        default={'priority': 1},
+        verbose_name=_('form of study'),
+        #~ default={'priority': 1},
     )
     date_range = YearlessDateRangeField(
-        verbose_name=_('Default date range'),
+        verbose_name=_('default date range'),
     )
 
     def __str__(self):
-        return str(_("Default date range for semester"))
+        return str(_("default date range for semester"))
 
     class Meta:
-        verbose_name = _('Semester date range')
-        verbose_name_plural = _('Semester date ranges')
+        verbose_name = _('semester date range')
+        verbose_name_plural = _('semester date ranges')
 
 class GroupStream(ReadOnlyOnExistForeignKey, models.Model):
     specialty = models.ForeignKey(
         'Specialty',
         on_delete=models.PROTECT,
-        verbose_name=_('Specialty'),
+        verbose_name=_('specialty'),
     )
     year = models.PositiveSmallIntegerField(
-        verbose_name=_('Year'),
+        verbose_name=_('year'),
         default=current_year,
         validators=[year_min_value, year_max_value],
     )
     form = models.ForeignKey(
         'FormOfStudy',
         on_delete=models.PROTECT,
-        verbose_name=_('Form of study'),
-        default={'priority': 1},
+        verbose_name=_('form of study'),
+        #~ default={'priority': 1},
     )
 
     important_fields = ['year', 'form']
@@ -343,31 +346,31 @@ class GroupStream(ReadOnlyOnExistForeignKey, models.Model):
         )
 
     class Meta:
-        verbose_name = _('Group stream')
-        verbose_name_plural = _('Group streams')
+        verbose_name = _('group stream')
+        verbose_name_plural = _('group streams')
         unique_together = [['specialty', 'year', 'form']]
 
 class GroupStreamSemester(models.Model):
     group = models.ForeignKey(
         'GroupStream',
         on_delete=models.CASCADE,
-        verbose_name=_('Group stream'),
+        verbose_name=_('group stream'),
     )
 
     semester = models.PositiveSmallIntegerField(
-        verbose_name=_('Semester'),
+        verbose_name=_('semester'),
         validators=[MinValueValidator(1)],
     )
 
     start_date = models.DateField(
-        verbose_name=_('Start date'),
+        verbose_name=_('start date'),
         default=None,
         blank=True,
         null=True,
     )
 
     end_date = models.DateField(
-        verbose_name=_('End date'),
+        verbose_name=_('end date'),
         default=None,
         blank=True,
         null=True,
@@ -380,13 +383,14 @@ class GroupStreamSemester(models.Model):
         super(GroupStreamSemester, self).clean()
 
     def __str__(self):
-        s = _('{semester} semester')
-        string = s.format(semester=self.semester)
-        return '%s - %s' % (self.group, string)
+        s = self.semester
+        n = _('semester')
+        semester = format_lazy('{semester} {name}', semester=s, name=n)
+        return '{} - {}'.format(self.group, semester)
 
     class Meta:
-        verbose_name = _('Group stream semester')
-        verbose_name_plural = _('Group stream semesters')
+        verbose_name = _('group stream semester')
+        verbose_name_plural = _('group stream semesters')
         unique_together = [['group', 'semester']]
 
 class Group(ReadOnlyOnExistForeignKey, MPTTModel):
@@ -401,7 +405,7 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
     parent = TreeForeignKey(
         'self',
         on_delete=models.CASCADE,
-        verbose_name=_('Parent node'),
+        verbose_name=_('parent node'),
         default=None,
         blank=True,
         null=True,
@@ -409,14 +413,14 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
     group_stream = models.ForeignKey(
         'GroupStream',
         on_delete=models.CASCADE,
-        verbose_name=_('Group stream'),
+        verbose_name=_('group stream'),
         help_text=_('If Parent node is set, this field fills automatically while saving.'),
         default=None,
         blank=True,
         null=True,
     )
     number = models.PositiveSmallIntegerField(
-        verbose_name=_('Number'),
+        verbose_name=_('number'),
         choices=NUMBER_CHOICES,
         default=None,
         blank=True,
@@ -449,7 +453,7 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
                 raise ValidationError(error)
             depth = self.calculate_max_depth_of_childs()
             if depth > MAX_GROUP_TREE_HEIGHT:
-                error = _("Group can't have parent group with such depth.")
+                error = _("Group can't have parent node with such depth.")
                 raise ValidationError(error)
         super(Group, self).clean()
 
@@ -500,8 +504,8 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
         return '%s%s' % args
 
     class Meta:
-        verbose_name = _('Group')
-        verbose_name_plural = _('Groups')
+        verbose_name = _('group')
+        verbose_name_plural = _('groups')
         unique_together = [['parent', 'number']]
 
     class MPTTMeta:
@@ -511,19 +515,21 @@ class Curriculum(models.Model):
     group = models.ForeignKey(
         'GroupStream',
         on_delete=models.CASCADE,
-        verbose_name=_('Group stream'),
+        verbose_name=_('group stream'),
     )
     semester = models.PositiveSmallIntegerField(
-        verbose_name=_('Semester'),
+        verbose_name=_('semester'),
     )
 
     def __str__(self):
-        semester = _('{semester} semester').format(semester=self.semester)
+        s = self.semester
+        n = _('semester')
+        semester = format_lazy('{semester} {name}', semester=s, name=n)
         return '%s - %s' % (self.group, semester)
 
     class Meta:
-        verbose_name = _('Curriculum')
-        verbose_name_plural = _('Curriculums')
+        verbose_name = _('curriculum')
+        verbose_name_plural = _('curriculums')
         unique_together = [['group', 'semester']]
 
 
@@ -531,34 +537,34 @@ class CurriculumRecord(models.Model):
     curriculum = models.ForeignKey(
         'Curriculum',
         on_delete=models.CASCADE,
-        verbose_name=_('Curriculum'),
+        verbose_name=_('curriculum'),
     )
     group = models.ForeignKey(
         'Group',
         on_delete=models.CASCADE,
-        verbose_name=_('Group'),
+        verbose_name=_('group'),
     )
     subjects = models.ManyToManyField(
         Subject,
         through='CurriculumRecordSubject',
-        verbose_name=_('Subjects'),
+        verbose_name=_('subjects'),
     )
     teachers = models.ManyToManyField(
         Teacher,
         through='CurriculumRecordTeacher',
-        verbose_name=_('Teachers'),
+        verbose_name=_('teachers'),
     )
     lectures = models.PositiveSmallIntegerField(
-        verbose_name=_('Number of lectures'),
+        verbose_name=_('number of lectures'),
     )
     practices = models.PositiveSmallIntegerField(
-        verbose_name=_('Number of practices'),
+        verbose_name=_('number of practices'),
     )
     laboratory = models.PositiveSmallIntegerField(
-        verbose_name=_('Number of laboratory'),
+        verbose_name=_('number of laboratory'),
     )
     independent_work = models.PositiveSmallIntegerField(
-        verbose_name=_('Amount of independent work'),
+        verbose_name=_('amount of independent work'),
     )
 
     def clean(self):
@@ -582,24 +588,26 @@ class CurriculumRecord(models.Model):
     def __str__(self):
         subjects = self.get_subject_name()
         if subjects: subjects = ' - ' + subjects
-        semester = _('{semester} semester').format(semester=self.get_semester())
+        s = self.get_semester()
+        n = _('semester')
+        semester = format_lazy('{semester} {name}', semester=s, name=n)
         return '%s - %s%s' % (self.group, semester, subjects)
 
     class Meta:
-        verbose_name = _('Curriculum record')
-        verbose_name_plural = _('Curriculum records')
+        verbose_name = _('curriculum record')
+        verbose_name_plural = _('curriculum records')
 
 class CurriculumRecordSubject(models.Model):
     record = models.ForeignKey(
         'CurriculumRecord',
         on_delete=models.CASCADE,
-        verbose_name=_('Curriculum record'),
+        verbose_name=_('curriculum record'),
     )
 
     subject = models.ForeignKey(
         'Subject',
         on_delete=models.CASCADE,
-        verbose_name=_('Subject'),
+        verbose_name=_('subject'),
     )
 
     def get_group(self):
@@ -609,13 +617,14 @@ class CurriculumRecordSubject(models.Model):
         return self.record.get_semester()
 
     def __str__(self):
-        s = _('{semester} semester')
-        string = s.format(semester=self.get_semester())
-        return '%s - %s - %s' % (self.get_group(), string, self.subject)
+        s = self.get_semester()
+        n = _('semester')
+        semester = format_lazy('{semester} {name}', semester=s, name=n)
+        return '%s - %s - %s' % (self.get_group(), semester, self.subject)
 
     class Meta:
-        verbose_name = _('Subject for curriculum record')
-        verbose_name_plural = _('Subjects for curriculum records')
+        verbose_name = _('subject for curriculum record')
+        verbose_name_plural = _('subjects for curriculum records')
 
 class CurriculumRecordTeacher(models.Model):
     RESPONSIBILITY_CHOICES = [
@@ -627,17 +636,17 @@ class CurriculumRecordTeacher(models.Model):
     record = models.ForeignKey(
         'CurriculumRecord',
         on_delete=models.CASCADE,
-        verbose_name=_('Curriculum record'),
+        verbose_name=_('curriculum record'),
     )
 
     group = models.ForeignKey(
         'Group',
         on_delete=models.CASCADE,
-        verbose_name=_('Group'),
+        verbose_name=_('group'),
     )
 
     responsibility = models.PositiveSmallIntegerField(
-        verbose_name=_('Responsibility'),
+        verbose_name=_('responsibility'),
         choices=RESPONSIBILITY_CHOICES,
         default=0,
     )
@@ -645,7 +654,7 @@ class CurriculumRecordTeacher(models.Model):
     teacher = models.ForeignKey(
         'Teacher',
         on_delete=models.CASCADE,
-        verbose_name=_('Teacher'),
+        verbose_name=_('teacher'),
     )
 
     def clean(self):
@@ -689,8 +698,8 @@ class CurriculumRecordTeacher(models.Model):
         return '%s - %s - %s' % args
 
     class Meta:
-        verbose_name = _('Teacher for curriculum record')
-        verbose_name_plural = _('Teachers for curriculum records')
+        verbose_name = _('teacher for curriculum record')
+        verbose_name_plural = _('teachers for curriculum records')
         unique_together = [[
             'record', 'group', 'responsibility',
         ]]
@@ -704,11 +713,11 @@ class TimetableRecording(models.Model):
             _('mon'), _('tue'), _('wed'), _('thu'), _('fri'),
             _('sat'), _('sun')
         )
-        msg = _('{lesson} lesson')
+        n = _('lesson')
         for ik, iv in enumerate(weeks):
             for j in WORK_DAYS:
                 for k in range(1, MAX_LESSONS_DAY + 1):
-                    l = msg.format(lesson=k)
+                    l = format_lazy('{lesson} {name}', lesson=k, name=n)
                     val = ik * 256 + j * 32 + k
                     arr.append((val, '%s - %s - %s' % (iv, days[j], l)))
         return arr
@@ -718,17 +727,17 @@ class TimetableRecording(models.Model):
     record = models.ForeignKey(
         'CurriculumRecord',
         on_delete=models.CASCADE,
-        verbose_name=_('Curriculum record'),
+        verbose_name=_('curriculum record'),
     )
 
     group = models.ForeignKey(
         'Group',
         on_delete=models.CASCADE,
-        verbose_name=_('Group'),
+        verbose_name=_('group'),
     )
 
     lesson = models.PositiveSmallIntegerField(
-        verbose_name=_('Lesson number'),
+        verbose_name=_('lesson number'),
         choices=LESSON_CHOICES,
         default=0,
     )
@@ -736,7 +745,7 @@ class TimetableRecording(models.Model):
     classroom = models.ForeignKey(
         'Classroom',
         on_delete=models.CASCADE,
-        verbose_name=_('Classroom'),
+        verbose_name=_('classroom'),
         default=None,
         null=True,
         blank=True,
@@ -745,7 +754,7 @@ class TimetableRecording(models.Model):
     teacher = models.ForeignKey(
         'Teacher',
         on_delete=models.CASCADE,
-        verbose_name=_('Teacher'),
+        verbose_name=_('teacher'),
         default=None,
         null=True,
         blank=True,
@@ -786,15 +795,16 @@ class TimetableRecording(models.Model):
         super(TimetableRecord, self).validate_unique(exclude)
 
     def __str__(self):
-        msg = _('{semester} semester')
-        semester = msg.format(semester=self.record.getSemester())
+        s = self.record.getSemester()
+        n = _('semester')
+        semester = format_lazy('{semester} {name}', semester=s, name=n)
         lesson = dict(self.LESSON_CHOICES)[self.lesson]
         args = (str(self.group), semester, lesson, self.record.getSubjectName())
         return '%s - %s - %s - %s' % args
 
     class Meta:
-        verbose_name = _('Timetable recording')
-        verbose_name_plural = _('Timetable recordings')
+        verbose_name = _('timetable recording')
+        verbose_name_plural = _('timetable recordings')
         unique_together = [
             ['record', 'group', 'lesson'], ['lesson', 'classroom']
         ]

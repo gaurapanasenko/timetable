@@ -41,10 +41,10 @@ class ReadOnlyOnExistForeignKey(object):
                 exists = True
                 break
         if exists and self.has_changed():
-            error = _("{} fields can't be changed when {} exists")
+            error = _("{} fields can't be changed when {} exists.")
             flds = [str(self._meta.get_field(i).verbose_name) for i in fields]
-            f = _(" and ").join(flds)
+            f = _(' and ').join(flds)
             mdls = [str(i[0]._meta.verbose_name) for i in models]
-            m = _(" and ").join(mdls)
+            m = _(' and ').join(mdls)
             raise ValidationError(error.format(f, m))
         super(ReadOnlyOnExistForeignKey, self).clean(*args, **kwargs)

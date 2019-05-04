@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('date_range', yearlessdate.models.YearlessDateRangeField(blank=True, default=None, null=True, verbose_name='Default time interval for first semester')),
-                ('form', models.ForeignKey(default={'priority': 1}, on_delete=django.db.models.deletion.PROTECT, to='timetableapp.FormOfStudy', verbose_name='Form of study')),
+                ('form', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='timetableapp.FormOfStudy', verbose_name='Form of study')),
             ],
             options={
                 'verbose_name': 'Semester',

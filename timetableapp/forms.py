@@ -1,4 +1,4 @@
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import ugettext_lazy as _
 from django import forms
 
 from .models import FormOfStudySemester
@@ -14,14 +14,14 @@ class FormOfStudySemesterFormset(forms.BaseInlineFormSet):
                 for jk, jv in enumerate(self.forms[ik+1:]):
                     jdr = jv.cleaned_data.get('date_range')
                     if jdr is not None and idr.are_overlap(jdr):
-                        error = _("Date ranges are overlapping")
+                        error = _("Date ranges are overlapping.")
                         raise forms.ValidationError(error)
         if count < 1:
             name = FormOfStudySemester._meta.verbose_name
-            error = _("You must have at least one {}")
+            error = _("You must have at least one {}.")
             raise forms.ValidationError(error)
         elif count > int(self.data['semesters']):
             n1 = FormOfStudySemester._meta.verbose_name_plural
             n2 = self.instance._meta.get_field('semesters').verbose_name
-            error = _("You may not have {} more than {}")
+            error = _("You may not have {} more than {}.")
             raise forms.ValidationError(error.format(n1, n2))

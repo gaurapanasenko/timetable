@@ -1,4 +1,4 @@
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib import admin
@@ -63,7 +63,7 @@ class DepartmentAdmin(ImportExportModelAdmin):
     list_filter = ('faculty', )
 
 class DepartmentFacultyFilter(admin.SimpleListFilter):
-    title = _('Faculty')
+    title = _('faculty')
     parameter_name = 'faculty'
 
     def lookups(self, request, model_admin):
@@ -133,7 +133,7 @@ class FormOfStudyAdmin(ImportExportModelAdmin):
     inlines = [FormOfStudySemesterInline,]
 
 class SpecialtyYearFilter(admin.SimpleListFilter):
-    title = _('Year')
+    title = _('year')
     parameter_name = 'year'
 
     def lookups(self, request, model_admin):
@@ -159,7 +159,7 @@ class SpecialtyYearFilter(admin.SimpleListFilter):
                 except ValueError: pass
 
 class SpecialtyFacultyFilter(admin.SimpleListFilter):
-    title = _('Faculty')
+    title = _('faculty')
     parameter_name = 'faculty'
 
     def lookups(self, request, model_admin):

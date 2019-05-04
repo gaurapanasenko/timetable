@@ -7,8 +7,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-05-04 11:11+0000\n"
-"PO-Revision-Date: 2019-05-04 14:17+0300\n"
+"POT-Creation-Date: 2019-05-04 15:39+0300\n"
+"PO-Revision-Date: 2019-05-04 15:40+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
 "Language: uk\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -17,368 +19,383 @@ msgstr ""
 "11 ? 0 : n % 1 == 0 && n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % "
 "100 > 14) ? 1 : n % 1 == 0 && (n % 10 ==0 || (n % 10 >=5 && n % 10 <=9) || "
 "(n % 100 >=11 && n % 100 <=14 )) ? 2: 3);\n"
-"Last-Translator: \n"
-"Language-Team: \n"
 "X-Generator: Poedit 1.8.11\n"
 
-#: admin.py:66 admin.py:162 models.py:40 models.py:47 models.py:162
-msgid "Faculty"
-msgstr "Факультет"
+#: admin.py:66 admin.py:162 models.py:41 models.py:48 models.py:163
+msgid "faculty"
+msgstr "факультет"
 
-#: admin.py:136 models.py:287
-msgid "Year"
-msgstr "Рік"
+#: admin.py:136 models.py:290
+msgid "year"
+msgstr "рік"
+
+#: apps.py:7
+msgid "Timetable Application"
+msgstr "Додаток \"Розклад\""
 
 #: forms.py:17
-msgid "Date ranges are overlapping"
-msgstr "Діапазони дат перекриваються"
+msgid "Date ranges are overlapping."
+msgstr "Діапазони дат перекриваються."
 
 #: forms.py:21
-msgid "You must have at least one {}"
-msgstr "Ви повинні мати принаймні одну {}"
+msgid "You must have at least one {}."
+msgstr "Ви повинні мати принаймні одну {}."
 
 #: forms.py:26
-msgid "You may not have {} more than {}"
-msgstr "Ви не можете мати {} більше, ніж {}"
+msgid "You may not have {} more than {}."
+msgstr "Ви не можете мати {} більше, ніж {}."
 
-#: models.py:23 models.py:50 models.py:72 models.py:146 models.py:233
-msgid "Name"
-msgstr "Ім'я"
+#: models.py:24 models.py:51 models.py:73 models.py:147 models.py:236
+msgid "name"
+msgstr "Назва"
 
-#: models.py:28 models.py:55 models.py:155
-msgid "Abbreviation"
-msgstr "Абревіатура"
+#: models.py:29 models.py:56 models.py:156
+msgid "abbreviation"
+msgstr "абревіатура"
 
-#: models.py:41
-msgid "Faculties"
-msgstr "Факультети"
+#: models.py:42
+msgid "faculties"
+msgstr "факультети"
 
-#: models.py:67 models.py:79 models.py:126
-msgid "Department"
-msgstr "Кафедра"
+#: models.py:68 models.py:80 models.py:127
+msgid "department"
+msgstr "кафедра"
 
-#: models.py:68
-msgid "Departments"
-msgstr "Кафедри"
+#: models.py:69
+msgid "departments"
+msgstr "кафедри"
 
-#: models.py:89 models.py:602
-msgid "Subject"
-msgstr "Предмет"
+#: models.py:90 models.py:610
+msgid "subject"
+msgstr "предмет"
 
-#: models.py:90 models.py:544
-msgid "Subjects"
-msgstr "Предмети"
+#: models.py:91 models.py:550
+msgid "subjects"
+msgstr "предмети"
 
-#: models.py:94
-msgid "First name"
-msgstr "Ім'я"
+#: models.py:95
+msgid "first name"
+msgstr "ім'я"
 
-#: models.py:99
-msgid "Middle name"
-msgstr "По батькові"
+#: models.py:100
+msgid "middle name"
+msgstr "по батькові"
 
-#: models.py:104
-msgid "Last name"
-msgstr "Прізвище"
+#: models.py:105
+msgid "last name"
+msgstr "прізвище"
 
-#: models.py:113 models.py:121
-msgid "Person"
-msgstr "Особа"
+#: models.py:114 models.py:122
+msgid "person"
+msgstr "особа"
 
-#: models.py:114
-msgid "Persons"
-msgstr "Особи"
+#: models.py:115
+msgid "persons"
+msgstr "особи"
 
-#: models.py:141 models.py:648 models.py:748
-msgid "Teacher"
-msgstr "Вчитель"
+#: models.py:142 models.py:657 models.py:757
+msgid "teacher"
+msgstr "вчитель"
 
-#: models.py:142 models.py:549
-msgid "Teachers"
-msgstr "Вчителі"
+#: models.py:143 models.py:555
+msgid "teachers"
+msgstr "вчителі"
 
-#: models.py:151 models.py:177 models.py:220 models.py:419
-msgid "Number"
-msgstr "Номер"
+#: models.py:152 models.py:178 models.py:223 models.py:423
+msgid "number"
+msgstr "номер"
 
-#: models.py:172 models.py:284
-msgid "Specialty"
-msgstr "Спеціальність"
+#: models.py:173 models.py:287
+msgid "specialty"
+msgstr "спеціальність"
 
-#: models.py:173
-msgid "Specialties"
-msgstr "Спеціальності"
+#: models.py:174
+msgid "specialties"
+msgstr "спеціальності"
 
-#: models.py:181
-msgid "Address"
-msgstr "Адреса"
+#: models.py:182
+msgid "address"
+msgstr "адреса"
 
-#: models.py:189
-msgid "Longitude"
-msgstr "Довгота"
+#: models.py:190
+msgid "longitude"
+msgstr "довгота"
 
-#: models.py:197
-msgid "Latitude"
-msgstr "Широта"
+#: models.py:198
+msgid "latitude"
+msgstr "широта"
 
-#: models.py:206
-#, python-brace-format
-msgid "{building} building"
-msgstr "{building} будинок"
+#: models.py:212 models.py:220
+msgid "building"
+msgstr "будинок"
 
-#: models.py:209 models.py:217
-msgid "Building"
-msgstr "Будинок"
+#: models.py:213
+msgid "buildings"
+msgstr "будинки"
 
-#: models.py:210
-msgid "Buildings"
-msgstr "Будинки"
+#: models.py:231 models.py:748
+msgid "classroom"
+msgstr "аудиторія"
 
-#: models.py:228 models.py:739
-msgid "Classroom"
-msgstr "Аудиторія"
+#: models.py:232
+msgid "classrooms"
+msgstr "аудиторії"
 
-#: models.py:229
-msgid "Classrooms"
-msgstr "Аудиторії"
+#: models.py:241
+msgid "suffix"
+msgstr "суфікс"
 
-#: models.py:238
-msgid "Suffix"
-msgstr "Суфікс"
+#: models.py:247
+msgid "number of semesters"
+msgstr "кількість семестрів"
 
-#: models.py:244
-msgid "Number of semesters"
-msgstr "Кількість семестрів"
-
-#: models.py:245
+#: models.py:248
 msgid ""
 "Total number of semesters, later if you specify fewer Semester date ranges "
-"than Number of semesters they will cycle from beginning automatically"
+"than Number of semesters they will cycle from beginning automatically."
 msgstr ""
 "Загальна кількість семестрів, пізніше, якщо ви вкажете меншу кількість "
 "діапазонів дат семестрів, ніж кількість семестрів, вони автоматично "
-"зацикляться від початку"
+"зацикляться від початку."
 
-#: models.py:249
-msgid "Priority"
-msgstr "Пріоритет"
+#: models.py:252
+msgid "priority"
+msgstr "пріоритет"
 
-#: models.py:258 models.py:266 models.py:294
-msgid "Form of study"
-msgstr "Форма навчання"
+#: models.py:261 models.py:269 models.py:297
+msgid "form of study"
+msgstr "форма навчання"
 
-#: models.py:259
-msgid "Forms of study"
-msgstr "Форми навчання"
+#: models.py:262
+msgid "forms of study"
+msgstr "форми навчання"
 
-#: models.py:270
-msgid "Default date range"
-msgstr "Діапазон дат за умовчанням"
-
-#: models.py:274
-msgid "Default date range for semester"
-msgstr "Діапазон дат за умовчанням для семестру"
+#: models.py:273
+msgid "default date range"
+msgstr "діапазон дат за умовчанням"
 
 #: models.py:277
-msgid "Semester date range"
-msgstr "Семестровий діапазон дат"
+msgid "default date range for semester"
+msgstr "діапазон дат за умовчанням для семестру"
 
-#: models.py:278
-msgid "Semester date ranges"
-msgstr "Семестрові діапазони дат"
+#: models.py:280
+msgid "semester date range"
+msgstr "семестровий діапазон дат"
 
-#: models.py:346 models.py:354 models.py:412 models.py:514
-msgid "Group stream"
-msgstr "Груповий потік"
+#: models.py:281
+msgid "semester date ranges"
+msgstr "семестрові діапазони дат"
 
-#: models.py:347
-msgid "Group streams"
-msgstr "Групові потоки"
+#: models.py:349 models.py:357 models.py:416 models.py:518
+msgid "group stream"
+msgstr "груповий потік"
 
-#: models.py:358 models.py:517
-msgid "Semester"
-msgstr "Семестр"
+#: models.py:350
+msgid "group streams"
+msgstr "групові потоки"
 
-#: models.py:363
-msgid "Start date"
-msgstr "Дата початку"
+#: models.py:361 models.py:387 models.py:521 models.py:526 models.py:592
+#: models.py:621 models.py:799
+msgid "semester"
+msgstr "семестр"
 
-#: models.py:370
-msgid "End date"
-msgstr "Дата закінчення"
+#: models.py:366
+msgid "start date"
+msgstr "дата початку"
 
-#: models.py:378
+#: models.py:373
+msgid "end date"
+msgstr "дата закінчення"
+
+#: models.py:381
 msgid "End date should be greater than start date."
 msgstr "Кінцева дата повинна бути більшою, ніж дата початку."
 
-#: models.py:383 models.py:521 models.py:585 models.py:612 models.py:789
-#, python-brace-format
-msgid "{semester} semester"
-msgstr "{semester} семестр"
+#: models.py:392
+msgid "group stream semester"
+msgstr "семестр групового потоку"
 
-#: models.py:388
-msgid "Group stream semester"
-msgstr "Семестр групового потоку"
+#: models.py:393
+msgid "group stream semesters"
+msgstr "семестри групового потоку"
 
-#: models.py:389
-msgid "Group stream semesters"
-msgstr "Семестри групового потоку"
+#: models.py:408
+msgid "parent node"
+msgstr "батьківський вузол"
 
-#: models.py:404
-msgid "Parent node"
-msgstr "Батьківський вузол"
-
-#: models.py:413
+#: models.py:417
 msgid "If Parent node is set, this field fills automatically while saving."
 msgstr ""
 "Якщо встановлено батьківський вузол, це поле заповнюється автоматично під "
 "час збереження."
 
-#: models.py:445
+#: models.py:449
 msgid "Group can't be child of itself."
 msgstr "Група не може бути дитиною сама від себе."
 
-#: models.py:448
-msgid "Number may not be empty when Parent node is set."
-msgstr ""
-"Номер не повинен бути порожнім, якщо встановлений Батьківський вузол."
-
 #: models.py:452
-msgid "Group can't have parent group with such depth."
-msgstr ""
+msgid "Number may not be empty when Parent node is set."
+msgstr "Номер не повинен бути порожнім, якщо встановлений Батьківський вузол."
 
-#: models.py:503 models.py:539 models.py:636 models.py:727
-msgid "Group"
-msgstr "Група"
+#: models.py:456
+msgid "Group can't have parent node with such depth."
+msgstr "Група не може мати батьківський вузол з такою глибиною."
 
-#: models.py:504
-msgid "Groups"
-msgstr "Групи"
+#: models.py:507 models.py:545 models.py:645 models.py:736
+msgid "group"
+msgstr "група"
 
-#: models.py:525 models.py:534
-msgid "Curriculum"
-msgstr "Навчальний план"
+#: models.py:508
+msgid "groups"
+msgstr "групи"
 
-#: models.py:526
-msgid "Curriculums"
-msgstr "Навчальні плани"
+#: models.py:531 models.py:540
+msgid "curriculum"
+msgstr "навчальний план"
 
-#: models.py:552
-msgid "Number of lectures"
-msgstr "Кількість лекцій"
-
-#: models.py:555
-msgid "Number of practices"
-msgstr "Кількість практик"
+#: models.py:532
+msgid "curriculums"
+msgstr "навчальні плани"
 
 #: models.py:558
-msgid "Number of laboratory"
-msgstr "Кількість лабораторних занять"
+msgid "number of lectures"
+msgstr "кількість лекцій"
 
 #: models.py:561
-msgid "Amount of independent work"
-msgstr "Кількість самостійної роботи"
+msgid "number of practices"
+msgstr "кількість практик"
 
-#: models.py:572
+#: models.py:564
+msgid "number of laboratory"
+msgstr "кількість лабораторних занять"
+
+#: models.py:567
+msgid "amount of independent work"
+msgstr "кількість самостійної роботи"
+
+#: models.py:578
 msgid "Group must be child of or same as group in curriculum."
 msgstr ""
 "Група повинна бути дочірньою або така сама, як група в навчальному плані."
 
-#: models.py:589 models.py:596 models.py:630 models.py:721
-msgid "Curriculum record"
-msgstr "Запис навчальної програми"
+#: models.py:597 models.py:604 models.py:639 models.py:730
+msgid "curriculum record"
+msgstr "запис навчальної програми"
 
-#: models.py:590
-msgid "Curriculum records"
-msgstr "Записи навчальної програми"
+#: models.py:598
+msgid "curriculum records"
+msgstr "записи навчальної програми"
 
-#: models.py:617
-msgid "Subject for curriculum record"
-msgstr "Предмет для запису навчального плану"
+#: models.py:626
+msgid "subject for curriculum record"
+msgstr "предмет для запису навчального плану"
 
-#: models.py:618
-msgid "Subjects for curriculum records"
-msgstr "Предмети для запису навчального плану"
+#: models.py:627
+msgid "subjects for curriculum records"
+msgstr "предмети для запису навчального плану"
 
-#: models.py:640
-msgid "Responsibility"
-msgstr "Відповідальність"
+#: models.py:649
+msgid "responsibility"
+msgstr "відповідальність"
 
-#: models.py:661
+#: models.py:670
 msgid "Group must be child of or same as group in record"
 msgstr ""
 "Група повинна бути дочірньою або така сама, як група в навчальному плані."
 
-#: models.py:681
+#: models.py:690
 msgid "Duplicate teacher for curriculum record through group {}."
 msgstr "Дублікат вчителя для запису навчального плану через групу {}."
 
-#: models.py:692
-msgid "Teacher for curriculum record"
-msgstr "Вчитель для запису навчального плану"
-
-#: models.py:693
-msgid "Teachers for curriculum records"
-msgstr "Вчителі для запису навчального плану"
+#: models.py:701
+msgid "teacher for curriculum record"
+msgstr "вчитель для запису навчального плану"
 
 #: models.py:702
+msgid "teachers for curriculum records"
+msgstr "вчителі для запису навчального плану"
+
+#: models.py:711
 msgid "numerator"
 msgstr "чисельник"
 
-#: models.py:702
+#: models.py:711
 msgid "denominator"
 msgstr "знаменник"
 
-#: models.py:704
+#: models.py:713
 msgid "mon"
 msgstr "пн"
 
-#: models.py:704
+#: models.py:713
 msgid "tue"
 msgstr "вт"
 
-#: models.py:704
+#: models.py:713
 msgid "wed"
 msgstr "ср"
 
-#: models.py:704
+#: models.py:713
 msgid "thu"
 msgstr "чт"
 
-#: models.py:704
+#: models.py:713
 msgid "fri"
 msgstr "пт"
 
-#: models.py:705
+#: models.py:714
 msgid "sat"
 msgstr "сб"
 
-#: models.py:705
+#: models.py:714
 msgid "sun"
 msgstr "вс"
 
-#: models.py:707
-#, python-brace-format
-msgid "{lesson} lesson"
-msgstr "{lesson} заняття"
+#: models.py:716
+msgid "lesson"
+msgstr "заняття"
 
-#: models.py:731
-msgid "Lesson number"
-msgstr "Номер уроку"
+#: models.py:740
+msgid "lesson number"
+msgstr "номер заняття"
 
-#: models.py:764
+#: models.py:773
 msgid "Group must be child of or same as group in curriculum record"
 msgstr ""
 "Група повинна бути дочірньою або така сама, як група в навчальному плані."
 
-#: models.py:784
+#: models.py:793
 msgid "Duplicate timetable record trough group {}."
 msgstr "Дублікат вчителя для запису навчального плану через групу {}."
 
-#: models.py:796
-msgid "Timetable recording"
-msgstr "Запис розкладу"
+#: models.py:806
+msgid "timetable recording"
+msgstr "запис розкладу"
 
-#: models.py:797
-msgid "Timetable recordings"
-msgstr "Записи розкладу"
+#: models.py:807
+msgid "timetable recordings"
+msgstr "записи розкладу"
+
+#~ msgid "Faculty"
+#~ msgstr "Факультет"
+
+#~ msgid "Year"
+#~ msgstr "Рік"
+
+#~ msgid "gemester"
+#~ msgstr "геместр"
+
+#~ msgid "croup"
+#~ msgstr "група"
+
+#~ msgid "Name"
+#~ msgstr "Ім'я"
+
+#~ msgid "{building} building"
+#~ msgstr "{building} будинок"
+
+#~ msgid "{semester} semester"
+#~ msgstr "{semester} семестр"
+
+#~ msgid "{lesson} lesson"
+#~ msgstr "{lesson} заняття"
