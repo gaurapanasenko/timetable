@@ -38,7 +38,7 @@ class Faculty(models.Model):
         return self.abbreviation if self.abbreviation else self.name
 
     class Meta:
-        verbose_name = _('faculty')
+        verbose_name = _('Faculty object')
         verbose_name_plural = _('faculties')
 
 class Department(models.Model):
@@ -65,7 +65,7 @@ class Department(models.Model):
         return self.abbreviation if self.abbreviation else self.name
 
     class Meta:
-        verbose_name = _('department')
+        verbose_name = _('Department object')
         verbose_name_plural = _('departments')
 
 class Subject(models.Model):
@@ -87,7 +87,7 @@ class Subject(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = _('subject')
+        verbose_name = _('Subject object')
         verbose_name_plural = _('subjects')
 
 class Person(models.Model):
@@ -111,7 +111,7 @@ class Person(models.Model):
         return '%s %s %s' % args
 
     class Meta:
-        verbose_name = _('person')
+        verbose_name = _('Person object')
         verbose_name_plural = _('persons')
         unique_together = [['first_name', 'middle_name', 'last_name']]
 
@@ -139,7 +139,7 @@ class Teacher(models.Model):
         return '%s' % self.person
 
     class Meta:
-        verbose_name = _('teacher')
+        verbose_name = _('Teacher object')
         verbose_name_plural = _('teachers')
 
 class Specialty(models.Model):
@@ -170,7 +170,7 @@ class Specialty(models.Model):
         return "%s - %s" % (self.number, self.name)
 
     class Meta:
-        verbose_name = _('specialty')
+        verbose_name = _('Specialty object')
         verbose_name_plural = _('specialties')
 
 class Building(models.Model):
@@ -204,12 +204,10 @@ class Building(models.Model):
     )
 
     def __str__(self):
-        b = self.number
-        n = Building._meta.verbose_name
-        return str(format_lazy('{building} {name}', building=b, name=n))
+        return str(self.number)
 
     class Meta:
-        verbose_name = _('building')
+        verbose_name = _('Building object')
         verbose_name_plural = _('buildings')
 
 
@@ -228,7 +226,7 @@ class Classroom(models.Model):
         return '%s/%s' % (self.building.number, self.number)
 
     class Meta:
-        verbose_name = _('classroom')
+        verbose_name = _('Classroom object')
         verbose_name_plural = _('classrooms')
 
 class FormOfStudy(models.Model):
@@ -258,7 +256,7 @@ class FormOfStudy(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = _('form of study')
+        verbose_name = _('Form of study object')
         verbose_name_plural = _('forms of study')
         ordering = ['priority']
 
@@ -277,7 +275,7 @@ class FormOfStudySemester(models.Model):
         return str(_("default date range for semester"))
 
     class Meta:
-        verbose_name = _('semester date range')
+        verbose_name = _('Semester date range object')
         verbose_name_plural = _('semester date ranges')
 
 class GroupStream(ReadOnlyOnExistForeignKey, models.Model):
@@ -346,7 +344,7 @@ class GroupStream(ReadOnlyOnExistForeignKey, models.Model):
         )
 
     class Meta:
-        verbose_name = _('group stream')
+        verbose_name = _('Group stream object')
         verbose_name_plural = _('group streams')
         unique_together = [['specialty', 'year', 'form']]
 
@@ -389,7 +387,7 @@ class GroupStreamSemester(models.Model):
         return '{} - {}'.format(self.group, semester)
 
     class Meta:
-        verbose_name = _('group stream semester')
+        verbose_name = _('Group stream semester object')
         verbose_name_plural = _('group stream semesters')
         unique_together = [['group', 'semester']]
 
@@ -504,7 +502,7 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
         return '%s%s' % args
 
     class Meta:
-        verbose_name = _('group')
+        verbose_name = _('Group object')
         verbose_name_plural = _('groups')
         unique_together = [['parent', 'number']]
 
@@ -528,7 +526,7 @@ class Curriculum(models.Model):
         return '%s - %s' % (self.group, semester)
 
     class Meta:
-        verbose_name = _('curriculum')
+        verbose_name = _('Curriculum object')
         verbose_name_plural = _('curriculums')
         unique_together = [['group', 'semester']]
 
@@ -594,7 +592,7 @@ class CurriculumRecord(models.Model):
         return '%s - %s%s' % (self.group, semester, subjects)
 
     class Meta:
-        verbose_name = _('curriculum record')
+        verbose_name = _('Curriculum record object')
         verbose_name_plural = _('curriculum records')
 
 class CurriculumRecordSubject(models.Model):
@@ -623,7 +621,7 @@ class CurriculumRecordSubject(models.Model):
         return '%s - %s - %s' % (self.get_group(), semester, self.subject)
 
     class Meta:
-        verbose_name = _('subject for curriculum record')
+        verbose_name = _('Subject for curriculum record object')
         verbose_name_plural = _('subjects for curriculum records')
 
 class CurriculumRecordTeacher(models.Model):
@@ -698,7 +696,7 @@ class CurriculumRecordTeacher(models.Model):
         return '%s - %s - %s' % args
 
     class Meta:
-        verbose_name = _('teacher for curriculum record')
+        verbose_name = _('Teacher for curriculum record object')
         verbose_name_plural = _('teachers for curriculum records')
         unique_together = [[
             'record', 'group', 'responsibility',
@@ -803,7 +801,7 @@ class TimetableRecording(models.Model):
         return '%s - %s - %s - %s' % args
 
     class Meta:
-        verbose_name = _('timetable recording')
+        verbose_name = _('Timetable recording object')
         verbose_name_plural = _('timetable recordings')
         unique_together = [
             ['record', 'group', 'lesson'], ['lesson', 'classroom']

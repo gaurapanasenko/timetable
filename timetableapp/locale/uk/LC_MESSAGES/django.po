@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-05-04 15:39+0300\n"
-"PO-Revision-Date: 2019-05-04 15:40+0300\n"
+"POT-Creation-Date: 2019-05-06 18:28+0300\n"
+"PO-Revision-Date: 2019-05-06 18:31+0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: uk\n"
@@ -21,7 +21,7 @@ msgstr ""
 "(n % 100 >=11 && n % 100 <=14 )) ? 2: 3);\n"
 "X-Generator: Poedit 1.8.11\n"
 
-#: admin.py:66 admin.py:162 models.py:41 models.py:48 models.py:163
+#: admin.py:66 admin.py:162 models.py:48 models.py:163
 msgid "faculty"
 msgstr "факультет"
 
@@ -53,21 +53,29 @@ msgstr "Назва"
 msgid "abbreviation"
 msgstr "абревіатура"
 
+#: models.py:41
+msgid "Faculty object"
+msgstr "об'єкт \"Факультет\""
+
 #: models.py:42
 msgid "faculties"
 msgstr "факультети"
 
-#: models.py:68 models.py:80 models.py:127
-msgid "department"
-msgstr "кафедра"
+#: models.py:68
+msgid "Department object"
+msgstr "об'єкт \"Кафедра\""
 
 #: models.py:69
 msgid "departments"
 msgstr "кафедри"
 
-#: models.py:90 models.py:610
-msgid "subject"
-msgstr "предмет"
+#: models.py:80 models.py:127
+msgid "department"
+msgstr "кафедра"
+
+#: models.py:90
+msgid "Subject object"
+msgstr "об'єкт \"Предмет\""
 
 #: models.py:91 models.py:550
 msgid "subjects"
@@ -85,17 +93,21 @@ msgstr "по батькові"
 msgid "last name"
 msgstr "прізвище"
 
-#: models.py:114 models.py:122
-msgid "person"
-msgstr "особа"
+#: models.py:114
+msgid "Person object"
+msgstr "об'єкт \"Особа\""
 
 #: models.py:115
 msgid "persons"
 msgstr "особи"
 
-#: models.py:142 models.py:657 models.py:757
-msgid "teacher"
-msgstr "вчитель"
+#: models.py:122
+msgid "person"
+msgstr "особа"
+
+#: models.py:142
+msgid "Teacher object"
+msgstr "об'єкт \"Вчитель\""
 
 #: models.py:143 models.py:555
 msgid "teachers"
@@ -105,9 +117,9 @@ msgstr "вчителі"
 msgid "number"
 msgstr "номер"
 
-#: models.py:173 models.py:287
-msgid "specialty"
-msgstr "спеціальність"
+#: models.py:173
+msgid "Specialty object"
+msgstr "об'єкт \"Спеціальність\""
 
 #: models.py:174
 msgid "specialties"
@@ -125,17 +137,21 @@ msgstr "довгота"
 msgid "latitude"
 msgstr "широта"
 
-#: models.py:212 models.py:220
-msgid "building"
-msgstr "будинок"
+#: models.py:212
+msgid "Building object"
+msgstr "об'єкт \"Будинок\""
 
 #: models.py:213
 msgid "buildings"
 msgstr "будинки"
 
-#: models.py:231 models.py:748
-msgid "classroom"
-msgstr "аудиторія"
+#: models.py:220
+msgid "building"
+msgstr "будинок"
+
+#: models.py:231
+msgid "Classroom object"
+msgstr "об'єкт \"Аудиторія\""
 
 #: models.py:232
 msgid "classrooms"
@@ -162,13 +178,17 @@ msgstr ""
 msgid "priority"
 msgstr "пріоритет"
 
-#: models.py:261 models.py:269 models.py:297
-msgid "form of study"
-msgstr "форма навчання"
+#: models.py:261
+msgid "Form of study object"
+msgstr "об'єкт \"Форма навчання\""
 
 #: models.py:262
 msgid "forms of study"
 msgstr "форми навчання"
+
+#: models.py:269 models.py:297
+msgid "form of study"
+msgstr "форма навчання"
 
 #: models.py:273
 msgid "default date range"
@@ -179,20 +199,28 @@ msgid "default date range for semester"
 msgstr "діапазон дат за умовчанням для семестру"
 
 #: models.py:280
-msgid "semester date range"
-msgstr "семестровий діапазон дат"
+msgid "Semester date range object"
+msgstr "об'єкт \"Семестровий діапазон дат\""
 
 #: models.py:281
 msgid "semester date ranges"
 msgstr "семестрові діапазони дат"
 
-#: models.py:349 models.py:357 models.py:416 models.py:518
-msgid "group stream"
-msgstr "груповий потік"
+#: models.py:287
+msgid "specialty"
+msgstr "спеціальність"
+
+#: models.py:349
+msgid "Group stream object"
+msgstr "об'єкт \"Груповий потік\""
 
 #: models.py:350
 msgid "group streams"
 msgstr "групові потоки"
+
+#: models.py:357 models.py:416 models.py:518
+msgid "group stream"
+msgstr "груповий потік"
 
 #: models.py:361 models.py:387 models.py:521 models.py:526 models.py:592
 #: models.py:621 models.py:799
@@ -212,8 +240,8 @@ msgid "End date should be greater than start date."
 msgstr "Кінцева дата повинна бути більшою, ніж дата початку."
 
 #: models.py:392
-msgid "group stream semester"
-msgstr "семестр групового потоку"
+msgid "Group stream semester object"
+msgstr "об'єкт \"Семестр групового потоку\""
 
 #: models.py:393
 msgid "group stream semesters"
@@ -241,21 +269,29 @@ msgstr "Номер не повинен бути порожнім, якщо вс�
 msgid "Group can't have parent node with such depth."
 msgstr "Група не може мати батьківський вузол з такою глибиною."
 
-#: models.py:507 models.py:545 models.py:645 models.py:736
-msgid "group"
-msgstr "група"
+#: models.py:507
+msgid "Group object"
+msgstr "об'єкт \"предмет\""
 
 #: models.py:508
 msgid "groups"
 msgstr "групи"
 
-#: models.py:531 models.py:540
-msgid "curriculum"
-msgstr "навчальний план"
+#: models.py:531
+msgid "Curriculum object"
+msgstr "об'єкт \"Запис навчальної програми\""
 
 #: models.py:532
 msgid "curriculums"
 msgstr "навчальні плани"
+
+#: models.py:540
+msgid "curriculum"
+msgstr "навчальний план"
+
+#: models.py:545 models.py:645 models.py:736
+msgid "group"
+msgstr "група"
 
 #: models.py:558
 msgid "number of lectures"
@@ -278,17 +314,25 @@ msgid "Group must be child of or same as group in curriculum."
 msgstr ""
 "Група повинна бути дочірньою або така сама, як група в навчальному плані."
 
-#: models.py:597 models.py:604 models.py:639 models.py:730
-msgid "curriculum record"
-msgstr "запис навчальної програми"
+#: models.py:597
+msgid "Curriculum record object"
+msgstr "об'єкт \"Запис навчальної програми\""
 
 #: models.py:598
 msgid "curriculum records"
 msgstr "записи навчальної програми"
 
+#: models.py:604 models.py:639 models.py:730
+msgid "curriculum record"
+msgstr "запис навчальної програми"
+
+#: models.py:610
+msgid "subject"
+msgstr "предмет"
+
 #: models.py:626
-msgid "subject for curriculum record"
-msgstr "предмет для запису навчального плану"
+msgid "Subject for curriculum record object"
+msgstr "об'єкт \"Предмет для запису навчального плану\""
 
 #: models.py:627
 msgid "subjects for curriculum records"
@@ -297,6 +341,10 @@ msgstr "предмети для запису навчального плану"
 #: models.py:649
 msgid "responsibility"
 msgstr "відповідальність"
+
+#: models.py:657 models.py:757
+msgid "teacher"
+msgstr "вчитель"
 
 #: models.py:670
 msgid "Group must be child of or same as group in record"
@@ -308,8 +356,8 @@ msgid "Duplicate teacher for curriculum record through group {}."
 msgstr "Дублікат вчителя для запису навчального плану через групу {}."
 
 #: models.py:701
-msgid "teacher for curriculum record"
-msgstr "вчитель для запису навчального плану"
+msgid "Teacher for curriculum record object"
+msgstr "об'єкт \"Вчитель для запису навчального плану\""
 
 #: models.py:702
 msgid "teachers for curriculum records"
@@ -359,6 +407,10 @@ msgstr "заняття"
 msgid "lesson number"
 msgstr "номер заняття"
 
+#: models.py:748
+msgid "classroom"
+msgstr "аудиторія"
+
 #: models.py:773
 msgid "Group must be child of or same as group in curriculum record"
 msgstr ""
@@ -369,8 +421,8 @@ msgid "Duplicate timetable record trough group {}."
 msgstr "Дублікат вчителя для запису навчального плану через групу {}."
 
 #: models.py:806
-msgid "timetable recording"
-msgstr "запис розкладу"
+msgid "Timetable recording object"
+msgstr "об'єкт \"Запис розкладу\""
 
 #: models.py:807
 msgid "timetable recordings"

@@ -34,6 +34,8 @@ INSTALLED_APPS = [
     'timetableapp.apps.TimetableappConfig',
     'yearlessdate.apps.YearlessdateConfig',
     'django_improvements.apps.DjangoImprovementsConfig',
+    #~ 'admin_templates.apps.AdminTemplatesConfig',
+    'suit',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
