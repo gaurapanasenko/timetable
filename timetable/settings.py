@@ -142,3 +142,8 @@ STATIC_URL = '/static/'
 #~ IMPORT_EXPORT_USE_TRANSACTIONS = True
 
 #~ TIMETABLEAPP_START_YEAR = 2000
+
+try:
+    from .local_settings import *
+except ImportError:
+    pass
