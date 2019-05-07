@@ -6,6 +6,10 @@ from django.urls import path
 
 from import_export.admin import ImportExportModelAdmin
 from mptt.admin import MPTTModelAdmin
+from django_improvements.admin import AdminBaseWithSelectRelated
+from django_improvements.admin import AdminInlineWithSelectRelated
+from django_improvements.admin import AdminWithSelectRelated
+from django_improvements.admin import FilterWithSelectRelated
 
 from .settings import *
 
@@ -26,7 +30,7 @@ from .models import CurriculumRecord
 from .models import GroupStreamSemester
 from .models import TimetableRecording
 
-from .forms import FormOfStudySemesterFormset
+from .forms import FormOfStudySemesterFormset, GroupStreamSemesterForm
 
 class CurriculumRecordInline(admin.TabularInline):
     model = CurriculumRecord
@@ -51,75 +55,80 @@ class CurriculumRecordAdmin(admin.ModelAdmin):
 @admin.register(Faculty)
 class FacultyAdmin(ImportExportModelAdmin):
     list_display = ('name', 'abbreviation',)
+    list_per_page = LIST_PER_PAGE
     search_fields = ('name', 'abbreviation',)
 
+
 @admin.register(Department)
-class DepartmentAdmin(ImportExportModelAdmin):
+class DepartmentAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     list_display = ('name', 'faculty', 'abbreviation',)
-    search_fields = (
-        'name', 'faculty__name',
-        'faculty__abbreviation', 'abbreviation',
-    )
     list_filter = ('faculty', )
-
-class DepartmentFacultyFilter(admin.SimpleListFilter):
-    title = _('faculty')
-    parameter_name = 'faculty'
-
-    def lookups(self, request, model_admin):
-        return ((i.id, str(i)) for i in Faculty.objects.all())
-
-    def queryset(self, request, queryset):
-        if self.value():
-            arr = Department.objects.filter(faculty=self.value()).all()
-            return queryset.filter(department__in=arr)
+    list_per_page = LIST_PER_PAGE
+    list_select_related = ('faculty',)
+    search_fields = (
+        'name',
+        'faculty__name', 'faculty__abbreviation',
+        'abbreviation',
+    )
 
 @admin.register(Subject)
-class SubjectAdmin(ImportExportModelAdmin):
+class SubjectAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     list_display = ('name', 'department',)
+    list_filter = ('department__faculty',)
+    list_per_page = LIST_PER_PAGE
+    list_select_related = ('department',)
+    raw_id_fields = ('department',)
     search_fields = (
         'name', 'department__name', 'department__faculty__name',
         'department__faculty__abbreviation', 'department__abbreviation',
     )
-    list_filter = (DepartmentFacultyFilter,)
-    raw_id_fields = ('department',)
-    #~ form = SubjectForm
 
 @admin.register(Person)
 class PersonAdmin(ImportExportModelAdmin):
     list_display = ('first_name', 'middle_name', 'last_name',)
+    list_per_page = LIST_PER_PAGE
     search_fields = ('first_name', 'middle_name', 'last_name',)
 
 @admin.register(Teacher)
-class TeacherAdmin(ImportExportModelAdmin):
+class TeacherAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     list_display = ('person', 'department',)
-    search_fields = (
-        'person__first_name', 'person__middle_name', 'person__last_name',
-        'department__name', 'department__faculty__name',
-        'department__faculty__abbreviation', 'department__abbreviation',
-    )
-    list_filter = (DepartmentFacultyFilter,)
+    list_filter = ('department__faculty',)
+    list_per_page = LIST_PER_PAGE
+    list_select_related = ('person', 'department', )
     raw_id_fields = ('department',)
+    search_fields = (
+        'person__first_name', 'person__middle_name',
+        'person__last_name',
+        'department__name',
+        'department__faculty__name',
+        'department__faculty__abbreviation',
+        'department__abbreviation',
+    )
 
 @admin.register(Specialty)
-class SpecialtyAdmin(ImportExportModelAdmin):
+class SpecialtyAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     list_display = ('name', 'number', 'abbreviation', 'faculty',)
+    list_filter = ('faculty',)
+    list_per_page = LIST_PER_PAGE
+    list_select_related = ('faculty',)
     search_fields = (
         'name', 'number', 'abbreviation',
         'faculty__name', 'faculty__abbreviation',
     )
-    list_filter = ('faculty',)
 
 @admin.register(Building)
 class BuildingAdmin(ImportExportModelAdmin):
     list_display = ('number', 'address',)
+    list_per_page = LIST_PER_PAGE
     search_fields = ('number', 'address',)
 
 @admin.register(Classroom)
-class ClassroomAdmin(ImportExportModelAdmin):
+class ClassroomAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     list_display = ('building', 'number',)
-    search_fields = ('building__number', 'building__address', 'number',)
     list_filter = ('building',)
+    list_per_page = LIST_PER_PAGE
+    list_select_related = ('building',)
+    search_fields = ('building__number', 'building__address', 'number',)
 
 class FormOfStudySemesterInline(admin.TabularInline):
     model = FormOfStudySemester
@@ -127,10 +136,11 @@ class FormOfStudySemesterInline(admin.TabularInline):
 
 @admin.register(FormOfStudy)
 class FormOfStudyAdmin(ImportExportModelAdmin):
-    list_display = ('name', 'suffix', 'semesters', 'priority',)
-    search_fields = ('name', 'suffix', 'semesters', 'priority',)
-    list_filter = ('semesters', 'priority',)
     inlines = [FormOfStudySemesterInline,]
+    list_display = ('name', 'suffix', 'semesters', 'priority',)
+    list_filter = ('semesters', 'priority',)
+    list_per_page = LIST_PER_PAGE
+    search_fields = ('name', 'suffix', 'semesters', 'priority',)
 
 class SpecialtyYearFilter(admin.SimpleListFilter):
     title = _('year')
@@ -158,26 +168,20 @@ class SpecialtyYearFilter(admin.SimpleListFilter):
                     return queryset.filter(**args)
                 except ValueError: pass
 
-class SpecialtyFacultyFilter(admin.SimpleListFilter):
-    title = _('faculty')
-    parameter_name = 'faculty'
-
-    def lookups(self, request, model_admin):
-        return ((i.id, str(i)) for i in Faculty.objects.all())
-
-    def queryset(self, request, queryset):
-        if self.value():
-            try:
-                arr = Specialty.objects.filter(faculty=self.value()).all()
-                return queryset.filter(specialty__in=arr)
-            except ValueError: pass
-
 class GroupStreamSemesterInline(admin.TabularInline):
     model = GroupStreamSemester
+    form = GroupStreamSemesterForm
 
 @admin.register(GroupStream)
-class GroupStreamAdmin(admin.ModelAdmin):
+class GroupStreamAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
+    inlines = [
+        GroupStreamSemesterInline,
+    ]
     list_display = ('__str__', 'specialty', 'year', 'form',)
+    list_filter = ('specialty__faculty', SpecialtyYearFilter,)
+    list_per_page = LIST_PER_PAGE
+    list_select_related = ('specialty', 'form')
+    raw_id_fields = ('specialty',)
     search_fields = (
         'specialty__name', 'specialty__number',
         'specialty__abbreviation',
@@ -185,21 +189,36 @@ class GroupStreamAdmin(admin.ModelAdmin):
         'year', 'form__name', 'form__suffix',
         'form__semesters', 'form__priority',
     )
-    list_filter = (SpecialtyFacultyFilter, 'form', SpecialtyYearFilter,)
-    raw_id_fields = ('specialty',)
-    inlines = [
-        GroupStreamSemesterInline,
-    ]
 
-class GroupInline(admin.TabularInline):
+class GroupInline(AdminInlineWithSelectRelated):
     model = Group
+    exclude = ['group_stream',]
+    list_select_related = (
+        'parent',
+        'parent__group_stream',
+        'parent__group_stream__specialty',
+        'parent__group_stream__form',
+        'group_stream',
+        'group_stream__specialty',
+        'group_stream__form',
+    )
 
 @admin.register(Group)
-class GroupAdmin(MPTTModelAdmin):
+class GroupAdmin(AdminWithSelectRelated, MPTTModelAdmin, ImportExportModelAdmin):
     #~ search_fields = ('specialty', 'year', 'form',)
     #~ list_filter = (SpecialtyFacultyFilter, 'form', SpecialtyYearFilter,)
     #~ raw_id_fields = ('specialty',)
     inlines = [GroupInline,]
+    list_per_page = LIST_PER_PAGE
+    list_select_related = (
+        'parent',
+        'parent__group_stream',
+        'parent__group_stream__specialty',
+        'parent__group_stream__form',
+        'group_stream',
+        'group_stream__specialty',
+        'group_stream__form',
+    )
 
     def get_readonly_fields(self, request, obj=None):
         if obj:

@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-05-04 15:39+0300\n"
-"PO-Revision-Date: 2019-05-04 14:18+0300\n"
+"POT-Creation-Date: 2019-05-06 20:49+0300\n"
+"PO-Revision-Date: 2019-05-06 20:49+0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: uk\n"
@@ -29,7 +29,7 @@ msgstr "День"
 msgid "Month"
 msgstr "Місяц"
 
-#: forms.py:45 forms.py:88
+#: forms.py:45 forms.py:90
 msgid "Invalid date."
 msgstr "Невірна дата."
 
@@ -46,3 +46,11 @@ msgstr ""
 #: helpers.py:68
 msgid "Start date and end date must be YearlessDate type."
 msgstr "Дата початку і дата завершення повинні бути типу YearlessDate."
+
+#: templates/forms/widgets/yearlessdaterange.html:3
+msgid "Start"
+msgstr "Початок"
+
+#: templates/forms/widgets/yearlessdaterange.html:11
+msgid "End"
+msgstr "Кінець"

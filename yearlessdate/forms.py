@@ -45,6 +45,8 @@ class YearlessDateField(forms.Field):
                 raise ValidationError(_('Invalid date.'))
 
 class YearlessDateRangeSelect(widgets.MultiWidget):
+    template_name = 'forms/widgets/yearlessdaterange.html'
+
     def __init__(self, attrs = None):
         _widgets = (
             widgets.Select(attrs=attrs, choices=MONTH_CHOICES),

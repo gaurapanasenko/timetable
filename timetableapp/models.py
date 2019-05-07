@@ -1,6 +1,8 @@
 from datetime import date
 
 from django.db import models
+from django.db.models import Max
+from django.db.models.query import Q
 from django.utils.text import format_lazy
 from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
@@ -34,8 +36,9 @@ class Faculty(models.Model):
         null=True,
     )
 
-    def __str__(self):
-        return self.abbreviation if self.abbreviation else self.name
+    def __str__(self, test = None):
+        a = self.abbreviation
+        return a if a else self.name
 
     class Meta:
         verbose_name = _('Faculty object')
@@ -62,7 +65,8 @@ class Department(models.Model):
     )
 
     def __str__(self):
-        return self.abbreviation if self.abbreviation else self.name
+        a = self.abbreviation
+        return a if a else self.name
 
     class Meta:
         verbose_name = _('Department object')
@@ -167,7 +171,7 @@ class Specialty(models.Model):
     )
 
     def __str__(self):
-        return "%s - %s" % (self.number, self.name)
+        return '%s - %s' % (self.number, self.name)
 
     class Meta:
         verbose_name = _('Specialty object')
@@ -296,7 +300,7 @@ class GroupStream(ReadOnlyOnExistForeignKey, models.Model):
         #~ default={'priority': 1},
     )
 
-    important_fields = ['year', 'form']
+    important_fields = ['year', 'form_id']
     related_models = [('timetableapp', 'GroupStreamSemester', 'group')]
 
     def save(self, *args, **kwargs):
@@ -425,7 +429,7 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
         null=True,
     )
 
-    important_fields = ['parent']
+    important_fields = ['parent_id']
     related_models = [
         ('timetableapp', 'CurriculumRecord', 'group'),
         ('timetableapp', 'CurriculumRecordTeacher', 'group'),
@@ -449,30 +453,11 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
             if self.number is None:
                 error = _("Number may not be empty when Parent node is set.")
                 raise ValidationError(error)
-            depth = self.calculate_max_depth_of_childs()
-            if depth > MAX_GROUP_TREE_HEIGHT:
+            level = self.get_max_level()
+            if level and level > MAX_GROUP_TREE_HEIGHT:
                 error = _("Group can't have parent node with such depth.")
                 raise ValidationError(error)
         super(Group, self).clean()
-
-    def get_path_to_root(self):
-        arr = []
-        p = self.parent
-        while p is not None:
-            arr.append(p)
-            p = p.parent
-        return arr
-
-    def get_childs(self):
-        arr = []
-        childs = Group.objects.filter(parent=self, parent__isnull=False)
-        arr += childs
-        for i in childs:
-            arr += i.get_childs()
-        return arr
-
-    def get_path_to_root_and_childs(self):
-        return [self] + self.get_path_to_root() + self.get_childs()
 
     def is_child(self, parent):
         p = self.parent
@@ -482,22 +467,15 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
             p = p.parent
         return False
 
-    def calculate_node_height(self, depth=0):
-        childs = Group.objects.filter(parent=self, parent__isnull=False)
-        max_depth = depth
-        for i in childs:
-            m = i.calculate_node_height(depth + 1)
-            if max_depth < m: max_depth = m
-        return max_depth
-
-    def calculate_max_depth_of_childs(self):
-        return 1 + len(self.get_path_to_root()) + self.calculate_node_height()
+    def get_max_level(self):
+        objs = Group.objects.filter(tree_id=self.tree_id).all()
+        return objs.aggregate(Max('level'))['level__max']
 
     def __str__(self):
-        number = [self] + self.get_path_to_root()
+        ancestors = list(self.get_ancestors(False, True).all())
         args = (
             str(self.group_stream),
-            ''.join('-%s' % i.number for i in reversed(number[:-1])),
+            ''.join('-%s' % i.number for i in (ancestors[1:])),
         )
         return '%s%s' % args
 
@@ -677,7 +655,7 @@ class CurriculumRecordTeacher(models.Model):
         try: group = self.group
         except Group.DoesNotExist as e: pass
         if record and group:
-            arr = group.get_path_to_root_and_childs() if group else []
+            arr = list(group.get_family().all()) if group else []
             args = {
                 'record': record,
                 'group__in': arr,
@@ -780,7 +758,7 @@ class TimetableRecording(models.Model):
         try: group = self.group
         except Group.DoesNotExist as e: pass
         if group:
-            arr = group.get_path_to_root_and_childs()
+            arr = list(group.get_family().all())
             args = {
                 'record': record,
                 'group__in': arr,

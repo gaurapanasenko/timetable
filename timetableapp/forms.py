@@ -1,7 +1,9 @@
 from django.utils.translation import ugettext_lazy as _
 from django import forms
 
-from .models import FormOfStudySemester
+from suit.widgets import SuitDateWidget
+
+from .models import FormOfStudySemester, GroupStreamSemester
 
 class FormOfStudySemesterFormset(forms.BaseInlineFormSet):
     def clean(self):
@@ -25,3 +27,12 @@ class FormOfStudySemesterFormset(forms.BaseInlineFormSet):
             n2 = self.instance._meta.get_field('semesters').verbose_name
             error = _("You may not have {} more than {}.")
             raise forms.ValidationError(error.format(n1, n2))
+
+class GroupStreamSemesterForm(forms.ModelForm):
+    class Meta:
+        model = GroupStreamSemester
+        widgets = {
+            'start_date': SuitDateWidget,
+            'end_date': SuitDateWidget,
+        }
+        exclude = ()
