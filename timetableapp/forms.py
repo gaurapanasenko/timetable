@@ -3,7 +3,7 @@ from django import forms
 
 from suit.widgets import SuitDateWidget
 
-from .models import FormOfStudySemester, GroupStreamSemester
+from .models import FormOfStudySemester, GroupStreamSemester, Group
 
 class FormOfStudySemesterFormset(forms.BaseInlineFormSet):
     def clean(self):

@@ -21,6 +21,7 @@ class AdminBaseWithSelectRelated(BaseModelAdmin):
                 if field in form.base_fields:
                     form.base_fields[field].queryset = form.base_fields[field].queryset.select_related(related)
 
+
 class AdminInlineWithSelectRelated(admin.TabularInline, AdminBaseWithSelectRelated):
     """
     Admin Inline using list_select_related for get_queryset and get_formset related fields
@@ -32,6 +33,20 @@ class AdminInlineWithSelectRelated(admin.TabularInline, AdminBaseWithSelectRelat
         self.form_apply_select_related(formset.form)
 
         return formset
+
+
+class AdminStackedInlineWithSelectRelated(admin.StackedInline, AdminBaseWithSelectRelated):
+    """
+    Admin Inline using list_select_related for get_queryset and get_formset related fields
+    """
+
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super(AdminStackedInlineWithSelectRelated, self).get_formset(request, obj, **kwargs)
+
+        self.form_apply_select_related(formset.form)
+
+        return formset
+
 
 class AdminWithSelectRelated(admin.ModelAdmin, AdminBaseWithSelectRelated):
     """

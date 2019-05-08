@@ -429,10 +429,16 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
         null=True,
     )
 
-    important_fields = ['parent_id']
-    related_models = [
-        ('timetableapp', 'CurriculumRecord', 'group'),
-        ('timetableapp', 'CurriculumRecordTeacher', 'group'),
+    readonly_fields = [
+        (
+            (
+                'Group',
+                'CurriculumRecord',
+                'CurriculumRecordTeacher',
+                'TimetableRecording',
+            ),
+            ('parent_id',)
+        )
     ]
 
     def save(self, *args, **kwargs):
@@ -466,24 +472,23 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
         super(Group, self).validate_unique(exclude)
 
     def is_child(self, parent):
-        p = self.parent
-        while p is not None:
-            if p == parent:
-                return True
-            p = p.parent
-        return False
+        return self.lft > parent.lft and self.rght < parent.rght
 
     def get_max_level(self):
         objs = Group.objects.filter(tree_id=self.tree_id).all()
         return objs.aggregate(Max('level'))['level__max']
 
     def __str__(self):
-        ancestors = list(self.get_ancestors(False, True).all())
-        args = (
-            str(self.group_stream),
-            ''.join('-%s' % i.number for i in (ancestors[1:])),
-        )
-        return '%s%s' % args
+        if self.parent_id is None:
+            return str(self.group_stream)
+        else:
+            return '%s-%s' % (self.parent, self.number)
+        #~ ancestors = list(self.get_ancestors(False, True).all())
+        #~ args = (
+            #~ str(self.group_stream),
+            #~ ''.join('-%s' % i.number for i in (ancestors[1:])),
+        #~ )
+        #~ return '%s%s' % args
 
     class Meta:
         verbose_name = _('Group object')
@@ -551,15 +556,10 @@ class CurriculumRecord(models.Model):
     )
 
     def clean(self):
-        curriculum = None
-        group = None
-        try: curriculum = self.curriculum
-        except Curriculum.DoesNotExist as e: pass
-        try: group = self.group
-        except Group.DoesNotExist as e: pass
-        if curriculum and group and group.group_stream != curriculum.group:
-            error = _("Group must be child of or same as group in curriculum.")
-            raise ValidationError(error)
+        if self.curriculum_id and self.group_id:
+            if self.group.group_stream_id != self.curriculum.group_id:
+                error = _("Group must be child of or same as group in curriculum.")
+                raise ValidationError(error)
         super(CurriculumRecord, self).clean()
 
     def get_semester(self):

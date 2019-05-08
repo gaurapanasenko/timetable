@@ -6,10 +6,14 @@ from django.urls import path
 
 from import_export.admin import ImportExportModelAdmin
 from mptt.admin import MPTTModelAdmin
-from django_improvements.admin import AdminBaseWithSelectRelated
-from django_improvements.admin import AdminInlineWithSelectRelated
-from django_improvements.admin import AdminWithSelectRelated
-from django_improvements.admin import FilterWithSelectRelated
+from mptt.forms import TreeNodeChoiceField
+from django_improvements.admin import (
+    AdminBaseWithSelectRelated,
+    AdminInlineWithSelectRelated,
+    AdminStackedInlineWithSelectRelated,
+    AdminWithSelectRelated,
+    FilterWithSelectRelated,
+)
 
 from .settings import *
 
@@ -30,27 +34,21 @@ from .models import CurriculumRecord
 from .models import GroupStreamSemester
 from .models import TimetableRecording
 
-from .forms import FormOfStudySemesterFormset, GroupStreamSemesterForm
+from .forms import (
+    FormOfStudySemesterFormset,
+    GroupStreamSemesterForm,
+)
 
-class CurriculumRecordInline(admin.TabularInline):
-    model = CurriculumRecord
-
-class CurriculumAdmin(admin.ModelAdmin):
-    inlines = [
-        CurriculumRecordInline,
-    ]
-
-class CurriculumRecordSubjectInline(admin.TabularInline):
-    model = CurriculumRecord.subjects.through
-
-class CurriculumRecordTeacherInline(admin.TabularInline):
-    model = CurriculumRecord.teachers.through
-
-class CurriculumRecordAdmin(admin.ModelAdmin):
-    inlines = [
-        CurriculumRecordSubjectInline,
-        CurriculumRecordTeacherInline,
-    ]
+def generate_list_select_related_for_group(prefix, parent, list_select):
+    arr = []
+    for i in range(0, MAX_GROUP_TREE_HEIGHT):
+        if i > 0:
+            t = [prefix] + [parent for i in range(i)]
+            arr.append('__'.join(filter(None, t)))
+        for j in list_select:
+            t = [prefix] + [parent for i in range(i)] + [j]
+            arr.append('__'.join(filter(None, t)))
+    return arr
 
 @admin.register(Faculty)
 class FacultyAdmin(ImportExportModelAdmin):
@@ -100,8 +98,6 @@ class TeacherAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
         'person__first_name', 'person__middle_name',
         'person__last_name',
         'department__name',
-        'department__faculty__name',
-        'department__faculty__abbreviation',
         'department__abbreviation',
     )
 
@@ -128,7 +124,7 @@ class ClassroomAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     list_filter = ('building',)
     list_per_page = LIST_PER_PAGE
     list_select_related = ('building',)
-    search_fields = ('building__number', 'building__address', 'number',)
+    search_fields = ('number',)
 
 class FormOfStudySemesterInline(admin.TabularInline):
     model = FormOfStudySemester
@@ -140,7 +136,7 @@ class FormOfStudyAdmin(ImportExportModelAdmin):
     list_display = ('name', 'suffix', 'semesters', 'priority',)
     list_filter = ('semesters', 'priority',)
     list_per_page = LIST_PER_PAGE
-    search_fields = ('name', 'suffix', 'semesters', 'priority',)
+    search_fields = ('name', 'suffix',)
 
 class SpecialtyYearFilter(admin.SimpleListFilter):
     title = _('year')
@@ -178,57 +174,164 @@ class GroupStreamAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
         GroupStreamSemesterInline,
     ]
     list_display = ('__str__', 'specialty', 'year', 'form',)
-    list_filter = ('specialty__faculty', SpecialtyYearFilter,)
+    list_filter = ('specialty__faculty', SpecialtyYearFilter, 'form',)
     list_per_page = LIST_PER_PAGE
     list_select_related = ('specialty', 'form')
     raw_id_fields = ('specialty',)
     search_fields = (
         'specialty__name', 'specialty__number',
-        'specialty__abbreviation',
-        'specialty__faculty__name', 'specialty__faculty__abbreviation',
-        'year', 'form__name', 'form__suffix',
-        'form__semesters', 'form__priority',
+        'specialty__abbreviation', 'year'
     )
+
+class GroupYearFilter(admin.SimpleListFilter):
+    title = _('year')
+    parameter_name = 'year'
+
+    def lookups(self, request, model_admin):
+        arr = []
+        for i in range(0, 5):
+            year = current_year() - i
+            arr.append(('{0}-{0}'.format(year), year))
+        for i in reversed(range(START_YEAR, year + 5, 10)):
+            year = '{0}-{1}'.format(i, i + 10)
+            arr.append((year, year))
+        return arr
+
+    def queryset(self, request, queryset):
+        if self.value():
+            years = self.value().split('-')
+            if len(years) == 2:
+                try:
+                    args = {
+                        'group_stream__year__gte': int(years[0]),
+                        'group_stream__year__lte': int(years[1]),
+                    }
+                    return queryset.filter(**args)
+                except ValueError: pass
 
 class GroupInline(AdminInlineWithSelectRelated):
     model = Group
     exclude = ['group_stream',]
-    list_select_related = (
-        'parent',
-        'parent__group_stream',
-        'parent__group_stream__specialty',
-        'parent__group_stream__form',
-        'group_stream',
-        'group_stream__specialty',
-        'group_stream__form',
+    list_select_related = generate_list_select_related_for_group(
+        '', 'parent', (
+            'group_stream',
+            'group_stream__specialty',
+            'group_stream__form',
+        )
     )
 
 @admin.register(Group)
 class GroupAdmin(AdminWithSelectRelated, MPTTModelAdmin, ImportExportModelAdmin):
-    #~ search_fields = ('specialty', 'year', 'form',)
-    #~ list_filter = (SpecialtyFacultyFilter, 'form', SpecialtyYearFilter,)
-    #~ raw_id_fields = ('specialty',)
     inlines = [GroupInline,]
-    list_per_page = LIST_PER_PAGE
-    list_select_related = (
-        'parent',
-        'parent__group_stream',
-        'parent__group_stream__specialty',
-        'parent__group_stream__form',
-        'group_stream',
-        'group_stream__specialty',
+    list_filter = (
+        'group_stream__specialty__faculty', GroupYearFilter,
         'group_stream__form',
+    )
+    list_per_page = LIST_PER_PAGE
+    list_select_related = generate_list_select_related_for_group(
+        '', 'parent', (
+            'group_stream',
+            'group_stream__specialty',
+            'group_stream__form',
+        )
+    )
+    raw_id_fields = ('group_stream', 'parent',)
+    search_fields = (
+        'group_stream__specialty__name',
+        'group_stream__specialty__number',
+        'group_stream__specialty__abbreviation',
+        'group_stream__year',
+        'number',
     )
 
     def get_readonly_fields(self, request, obj=None):
-        if obj:
-            return []
-            #~ return ['group_stream', 'parent', 'number',]
-        else:
-            return []
+        if obj: return ['group_stream', 'parent',]
+        else: return []
 
-admin.site.register(Curriculum, CurriculumAdmin)
+class CurriculumRecordInline(admin.StackedInline):
+    model = CurriculumRecord
+    raw_id_fields = ('group',)
 
-admin.site.register(CurriculumRecord, CurriculumRecordAdmin)
+@admin.register(Curriculum)
+class CurriculumAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
+    inlines = [
+        CurriculumRecordInline,
+    ]
+    list_filter = (
+        'group__specialty__faculty', SpecialtyYearFilter,
+        'group__form', 'semester',
+    )
+    list_per_page = LIST_PER_PAGE
+    list_select_related = [
+        'group',
+        'group__specialty',
+        'group__form',
+    ]
+    raw_id_fields = ('group',)
+    search_fields = (
+        'group__specialty__name', 'group__specialty__number',
+        'group__specialty__abbreviation', 'group__year'
+    )
+
+class CurriculumRecordSubjectInline(admin.TabularInline):
+    model = CurriculumRecord.subjects.through
+
+class CurriculumRecordTeacherInline(AdminInlineWithSelectRelated):
+    model = CurriculumRecord.teachers.through
+    #~ form = CurriculumRecordTeacherInlineForm
+    #~ raw_id_fields = ('teacher',)
+    list_select_related = generate_list_select_related_for_group(
+        'group', 'parent', (
+            'group_stream',
+            'group_stream__specialty',
+            'group_stream__form',
+        )
+    ) + [
+        'teacher', 'teacher__person',
+    ]
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        obj = request._obj_
+        if db_field.name == "group":
+            if obj is not None:
+                filter_dict = {
+                    'group_stream__exact': obj.group.group_stream_id,
+                }
+                query = Group.objects.filter(**filter_dict)
+                return TreeNodeChoiceField(query)
+            else:
+                return TreeNodeChoiceField(Group.objects.none())
+        field = super().formfield_for_foreignkey(db_field, request, **kwargs)
+        if db_field.name == "teacher":
+            if obj is not None:
+                departments = [i.department_id for i in obj.subjects.all()]
+                filter_dict = {
+                    'department__in': departments,
+                }
+                field.queryset = field.queryset.filter(**filter_dict)
+            else:
+                field.queryset = field.queryset.none()
+        return field
+
+@admin.register(CurriculumRecord)
+class CurriculumRecordAdmin(ImportExportModelAdmin):
+    inlines = [
+        CurriculumRecordSubjectInline,
+        CurriculumRecordTeacherInline,
+    ]
+    raw_id_fields = ('curriculum', 'group',)
+
+    def get_inline_instances(self, request, obj=None):
+        if obj: return [inline(self.model, self.admin_site) for inline in self.inlines]
+        else: return []
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj: return ['curriculum', 'group',]
+        else: return []
+
+    def get_form(self, request, obj=None, **kwargs):
+        request._obj_ = obj
+        return super(CurriculumRecordAdmin, self).get_form(request, obj, **kwargs)
+
 
 admin.site.register(TimetableRecording)

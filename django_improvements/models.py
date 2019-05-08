@@ -23,14 +23,17 @@ class ReadOnlyOnExistForeignKey(object):
             a = []
             for j in i[0]:
                 x = True
+                y = []
                 for k in self._meta._relation_tree:
+                    y.append(k.model.__name__)
                     if k.model.__name__ == j:
                         a.append((k.model, k.name))
                         x = False
                 if x:
-                    error = _("{} and {} are not related.")
+                    error = "{} and {} are not related. Choices are {}."
                     name = self.__class__.__name__
-                    raise Exception(error.format(name, j))
+                    choices = ', '.join(y)
+                    raise Exception(error.format(name, j, choices))
             b = []
             for j in i[1]:
                 b.append(j)
@@ -66,12 +69,15 @@ class ReadOnlyOnExistForeignKey(object):
                     adict[name] = Exists(f)
                     edict[name] = (vj[0], vi[1])
             selffilter = type(self).objects.filter(pk=self.id)
-            response = selffilter.annotate(**adict).values(*adict)[0]
+            response = selffilter.annotate(**adict).values(*adict)
+            if len(response):
+                response = response[0]
+            else: response = {}
             for k, v in response.items():
-                error = _("{} fields can't be changed when {} exists.")
+                error = _("{} fields can't be changed when related {} exists.")
                 pair = edict[k]
                 m = str(pair[0]._meta.verbose_name)
                 flds = [str(self._meta.get_field(i).verbose_name) for i in pair[1]]
-                f = _(' and ').join(flds)
+                f = ', '.join(flds)
                 raise ValidationError(error.format(f, m))
         super(ReadOnlyOnExistForeignKey, self).clean(*args, **kwargs)

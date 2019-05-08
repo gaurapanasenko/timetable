@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-05-08 13:50+0300\n"
-"PO-Revision-Date: 2019-05-08 13:50+0300\n"
+"POT-Creation-Date: 2019-05-08 14:11+0300\n"
+"PO-Revision-Date: 2019-05-08 14:12+0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: uk\n"
@@ -21,14 +21,12 @@ msgstr ""
 "(n % 100 >=11 && n % 100 <=14 )) ? 2: 3);\n"
 "X-Generator: Poedit 1.8.11\n"
 
-#: models.py:31
-msgid "{} and {} are not related."
-msgstr "{} і {} не пов'язані між собою."
+#: models.py:77
+msgid "{} fields can't be changed when related {} exists."
+msgstr "Поля {} не можна змінити, якщо існує зв'язаний {}."
 
-#: models.py:71
-msgid "{} fields can't be changed when {} exists."
-msgstr "Поля {} не можна змінити, якщо існує {}."
+#~ msgid "{} and {} are not related."
+#~ msgstr "{} і {} не пов'язані між собою."
 
-#: models.py:75
-msgid " and "
-msgstr " и "
+#~ msgid " and "
+#~ msgstr " и "
