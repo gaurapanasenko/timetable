@@ -222,7 +222,8 @@ class GroupAdmin(AdminWithSelectRelated, MPTTModelAdmin, ImportExportModelAdmin)
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return ['group_stream', 'parent', 'number',]
+            return []
+            #~ return ['group_stream', 'parent', 'number',]
         else:
             return []
 

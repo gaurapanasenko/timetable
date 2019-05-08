@@ -299,9 +299,9 @@ class GroupStream(ReadOnlyOnExistForeignKey, models.Model):
         verbose_name=_('form of study'),
         #~ default={'priority': 1},
     )
-
-    important_fields = ['year', 'form_id']
-    related_models = [('timetableapp', 'GroupStreamSemester', 'group')]
+    readonly_fields = [
+        (('GroupStreamSemester',), ('year', 'form_id'))
+    ]
 
     def save(self, *args, **kwargs):
         form = None
@@ -436,28 +436,34 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
     ]
 
     def save(self, *args, **kwargs):
-        parent = None
-        try: parent = self.parent
-        except Group.DoesNotExist as e: pass
-        if self.parent is not None:
-            self.group_stream = self.parent.group_stream
-        elif self.number is not None:
-            self.number = None
+        if self.parent_id is not None:
+            self.group_stream_id = self.parent.group_stream_id
+        else: self.number = None
         super(Group, self).save(*args, **kwargs)
+        self.get_descendants().update(group_stream=self.group_stream_id)
 
     def clean(self):
-        if self.parent is not None:
-            if self == self.parent:
-                error = _("Group can't be child of itself.")
-                raise ValidationError(error)
+        if self.parent_id is not None:
             if self.number is None:
                 error = _("Number may not be empty when Parent node is set.")
                 raise ValidationError(error)
-            level = self.get_max_level()
-            if level and level > MAX_GROUP_TREE_HEIGHT:
+            if self.parent.level + 1 >= MAX_GROUP_TREE_HEIGHT:
                 error = _("Group can't have parent node with such depth.")
                 raise ValidationError(error)
+            #~ level = self.get_max_level()
+            #~ if level and level > MAX_GROUP_TREE_HEIGHT:
         super(Group, self).clean()
+
+    def validate_unique(self, exclude=None):
+        if self.parent_id is None:
+            args = {
+                'parent__isnull': True,
+                'group_stream_id': self.group_stream_id,
+            }
+            f = Group.objects.exclude(id=self.id).filter(**args)
+            if f.exists():
+                raise ValidationError(_("Duplicate group."))
+        super(Group, self).validate_unique(exclude)
 
     def is_child(self, parent):
         p = self.parent
@@ -483,6 +489,7 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
         verbose_name = _('Group object')
         verbose_name_plural = _('groups')
         unique_together = [['parent', 'number']]
+        index_together = [['parent', 'group_stream']]
 
     class MPTTMeta:
         order_insertion_by = ['number']
