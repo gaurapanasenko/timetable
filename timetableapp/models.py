@@ -456,8 +456,6 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
             if self.parent.level + 1 >= MAX_GROUP_TREE_HEIGHT:
                 error = _("Group can't have parent node with such depth.")
                 raise ValidationError(error)
-            #~ level = self.get_max_level()
-            #~ if level and level > MAX_GROUP_TREE_HEIGHT:
         super(Group, self).clean()
 
     def validate_unique(self, exclude=None):
@@ -474,21 +472,11 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
     def is_child(self, parent):
         return self.lft > parent.lft and self.rght < parent.rght
 
-    def get_max_level(self):
-        objs = Group.objects.filter(tree_id=self.tree_id).all()
-        return objs.aggregate(Max('level'))['level__max']
-
     def __str__(self):
         if self.parent_id is None:
             return str(self.group_stream)
         else:
             return '%s-%s' % (self.parent, self.number)
-        #~ ancestors = list(self.get_ancestors(False, True).all())
-        #~ args = (
-            #~ str(self.group_stream),
-            #~ ''.join('-%s' % i.number for i in (ancestors[1:])),
-        #~ )
-        #~ return '%s%s' % args
 
     class Meta:
         verbose_name = _('Group object')
@@ -533,12 +521,11 @@ class CurriculumRecord(models.Model):
         verbose_name=_('group'),
     )
     subjects = models.ManyToManyField(
-        Subject,
-        through='CurriculumRecordSubject',
+        'Subject',
         verbose_name=_('subjects'),
     )
     teachers = models.ManyToManyField(
-        Teacher,
+        'Teacher',
         through='CurriculumRecordTeacher',
         verbose_name=_('teachers'),
     )
@@ -580,34 +567,31 @@ class CurriculumRecord(models.Model):
         verbose_name = _('Curriculum record object')
         verbose_name_plural = _('curriculum records')
 
-class CurriculumRecordSubject(models.Model):
-    record = models.ForeignKey(
-        'CurriculumRecord',
-        on_delete=models.CASCADE,
-        verbose_name=_('curriculum record'),
-    )
+#~ class CurriculumRecordSubject(models.Model):
+    #~ record = models.ForeignKey(
+        #~ 'CurriculumRecord',
+        #~ on_delete=models.CASCADE,
+        #~ verbose_name=_('curriculum record'),
+    #~ )
 
-    subject = models.ForeignKey(
-        'Subject',
-        on_delete=models.CASCADE,
-        verbose_name=_('subject'),
-    )
+    #~ subject = models.ForeignKey(
+        #~ 'Subject',
+        #~ on_delete=models.CASCADE,
+        #~ verbose_name=_('subject'),
+    #~ )
 
-    def get_group(self):
-        return self.record.group
+    #~ def get_group(self):
+        #~ return self.record.group
 
-    def get_semester(self):
-        return self.record.get_semester()
+    #~ def get_semester(self):
+        #~ return self.record.get_semester()
 
-    def __str__(self):
-        s = self.get_semester()
-        n = _('semester')
-        semester = format_lazy('{semester} {name}', semester=s, name=n)
-        return '%s - %s - %s' % (self.get_group(), semester, self.subject)
+    #~ def __str__(self):
+        #~ return str(self.subject)
 
-    class Meta:
-        verbose_name = _('Subject for curriculum record object')
-        verbose_name_plural = _('subjects for curriculum records')
+    #~ class Meta:
+        #~ verbose_name = _('Subject for curriculum record object')
+        #~ verbose_name_plural = _('subjects for curriculum records')
 
 class CurriculumRecordTeacher(models.Model):
     RESPONSIBILITY_CHOICES = [
@@ -638,7 +622,18 @@ class CurriculumRecordTeacher(models.Model):
         'Teacher',
         on_delete=models.CASCADE,
         verbose_name=_('teacher'),
+        help_text=_('To assign teacher, you need choose at least one subject.'),
     )
+
+    #~ def save(self, *args, **kwargs):
+        #~ if not self.subject_id and self.teacher_id and self.record_id:
+            #~ flt_dct = {
+                #~ 'record__exact': self.record_id,
+                #~ 'subject__department__exact': self.teacher.department_id
+            #~ }
+            #~ subject = CurriculumRecordSubject.objects.filter(**flt_dct).first()
+            #~ self.subject = subject
+        #~ super(CurriculumRecordTeacher, self).save(*args, **kwargs)
 
     def clean(self):
         record = None

@@ -1,9 +1,24 @@
 from django.utils.translation import ugettext_lazy as _
+from django.contrib import admin
+from django.contrib.admin import widgets
+from django.contrib.admin.sites import site
 from django import forms
 
 from suit.widgets import SuitDateWidget
 
-from .models import FormOfStudySemester, GroupStreamSemester, Group
+from .models import (
+    FormOfStudySemester,
+    #~ GroupStream,
+    GroupStreamSemester,
+    Group,
+    CurriculumRecord,
+)
+
+#~ class BlogRawIdWidget(widgets.ForeignKeyRawIdWidget):
+    #~ def url_parameters(self):
+        #~ res = super().url_parameters()
+        #~ res['type__exact'] = 'PROJ'
+        #~ return res
 
 class FormOfStudySemesterFormset(forms.BaseInlineFormSet):
     def clean(self):
@@ -36,3 +51,19 @@ class GroupStreamSemesterForm(forms.ModelForm):
             'end_date': SuitDateWidget,
         }
         exclude = ()
+
+#~ class CurriculumRecordAdminForm(forms.ModelForm):
+    #~ def __init__(self, *args, **kwargs):
+        #~ super().__init__(*args, **kwargs)
+        #~ self.fields['department'].queryset = Blog.objects.filter(type='PROJ')
+        #~ print(vars(CurriculumRecord._meta.get_field('group')))
+        #~ arg_dict = {
+            #~ 'rel': CurriculumRecord._meta.get_field('group').remote_field,
+            #~ 'admin_site': site,
+        #~ }
+        #~ widget = widgets.ForeignKeyRawIdWidget(**arg_dict)
+        #~ self.fields['group'].widget = widget
+
+    #~ class Meta:
+        #~ fields = '__all__'
+        #~ model = CurriculumRecord

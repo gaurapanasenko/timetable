@@ -1,3 +1,5 @@
+import json
+
 from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
@@ -37,6 +39,7 @@ from .models import TimetableRecording
 from .forms import (
     FormOfStudySemesterFormset,
     GroupStreamSemesterForm,
+    #~ CurriculumRecordAdminForm,
 )
 
 def generate_list_select_related_for_group(prefix, parent, list_select):
@@ -63,11 +66,7 @@ class DepartmentAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     list_filter = ('faculty', )
     list_per_page = LIST_PER_PAGE
     list_select_related = ('faculty',)
-    search_fields = (
-        'name',
-        'faculty__name', 'faculty__abbreviation',
-        'abbreviation',
-    )
+    search_fields = ('name', 'abbreviation',)
 
 @admin.register(Subject)
 class SubjectAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
@@ -75,7 +74,7 @@ class SubjectAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     list_filter = ('department__faculty',)
     list_per_page = LIST_PER_PAGE
     list_select_related = ('department',)
-    raw_id_fields = ('department',)
+    autocomplete_fields = ('department',)
     search_fields = (
         'name', 'department__name', 'department__faculty__name',
         'department__faculty__abbreviation', 'department__abbreviation',
@@ -93,13 +92,22 @@ class TeacherAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     list_filter = ('department__faculty',)
     list_per_page = LIST_PER_PAGE
     list_select_related = ('person', 'department', )
-    raw_id_fields = ('department',)
+    autocomplete_fields = ('department',)
     search_fields = (
         'person__first_name', 'person__middle_name',
         'person__last_name',
         'department__name',
         'department__abbreviation',
     )
+
+    def get_search_results(self, request, queryset, search_term):
+        queryset, use_distinct = super().get_search_results(request, queryset, search_term)
+        p = request.path.find('/autocomplete') != -1
+        f = 'filter' in request.GET
+        if request.is_ajax() and p and f:
+            filter_dict = json.loads(request.GET['filter'])
+            queryset = queryset.filter(**filter_dict)
+        return queryset, use_distinct
 
 @admin.register(Specialty)
 class SpecialtyAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
@@ -138,9 +146,10 @@ class FormOfStudyAdmin(ImportExportModelAdmin):
     list_per_page = LIST_PER_PAGE
     search_fields = ('name', 'suffix',)
 
-class SpecialtyYearFilter(admin.SimpleListFilter):
+class YearFilter(admin.SimpleListFilter):
     title = _('year')
     parameter_name = 'year'
+    year_field_path = ''
 
     def lookups(self, request, model_admin):
         arr = []
@@ -157,9 +166,10 @@ class SpecialtyYearFilter(admin.SimpleListFilter):
             years = self.value().split('-')
             if len(years) == 2:
                 try:
+                    fp = self.year_field_path
                     args = {
-                        'year__gte': int(years[0]),
-                        'year__lte': int(years[1]),
+                        '%syear__gte' % fp: int(years[0]),
+                        '%syear__lte' % fp: int(years[1]),
                     }
                     return queryset.filter(**args)
                 except ValueError: pass
@@ -174,40 +184,14 @@ class GroupStreamAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
         GroupStreamSemesterInline,
     ]
     list_display = ('__str__', 'specialty', 'year', 'form',)
-    list_filter = ('specialty__faculty', SpecialtyYearFilter, 'form',)
+    list_filter = ('specialty__faculty', YearFilter, 'form',)
     list_per_page = LIST_PER_PAGE
     list_select_related = ('specialty', 'form')
-    raw_id_fields = ('specialty',)
+    autocomplete_fields = ('specialty',)
     search_fields = (
         'specialty__name', 'specialty__number',
         'specialty__abbreviation', 'year'
     )
-
-class GroupYearFilter(admin.SimpleListFilter):
-    title = _('year')
-    parameter_name = 'year'
-
-    def lookups(self, request, model_admin):
-        arr = []
-        for i in range(0, 5):
-            year = current_year() - i
-            arr.append(('{0}-{0}'.format(year), year))
-        for i in reversed(range(START_YEAR, year + 5, 10)):
-            year = '{0}-{1}'.format(i, i + 10)
-            arr.append((year, year))
-        return arr
-
-    def queryset(self, request, queryset):
-        if self.value():
-            years = self.value().split('-')
-            if len(years) == 2:
-                try:
-                    args = {
-                        'group_stream__year__gte': int(years[0]),
-                        'group_stream__year__lte': int(years[1]),
-                    }
-                    return queryset.filter(**args)
-                except ValueError: pass
 
 class GroupInline(AdminInlineWithSelectRelated):
     model = Group
@@ -220,11 +204,14 @@ class GroupInline(AdminInlineWithSelectRelated):
         )
     )
 
+class GroupStreamYearFilter(YearFilter):
+    year_field_path = 'group_stream__'
+
 @admin.register(Group)
 class GroupAdmin(AdminWithSelectRelated, MPTTModelAdmin, ImportExportModelAdmin):
     inlines = [GroupInline,]
     list_filter = (
-        'group_stream__specialty__faculty', GroupYearFilter,
+        'group_stream__specialty__faculty', GroupStreamYearFilter,
         'group_stream__form',
     )
     list_per_page = LIST_PER_PAGE
@@ -235,7 +222,7 @@ class GroupAdmin(AdminWithSelectRelated, MPTTModelAdmin, ImportExportModelAdmin)
             'group_stream__form',
         )
     )
-    raw_id_fields = ('group_stream', 'parent',)
+    autocomplete_fields = ('group_stream', 'parent',)
     search_fields = (
         'group_stream__specialty__name',
         'group_stream__specialty__number',
@@ -248,17 +235,42 @@ class GroupAdmin(AdminWithSelectRelated, MPTTModelAdmin, ImportExportModelAdmin)
         if obj: return ['group_stream', 'parent',]
         else: return []
 
-class CurriculumRecordInline(admin.StackedInline):
+    def get_search_results(self, request, queryset, search_term):
+        queryset, use_distinct = super().get_search_results(request, queryset, search_term)
+        p = request.path.find('/autocomplete') != -1
+        f = 'filter' in request.GET
+        if request.is_ajax() and p and f:
+            filter_dict = json.loads(request.GET['filter'])
+            queryset = queryset.filter(**filter_dict)
+        return queryset, use_distinct
+
+class CurriculumRecordInline(AdminStackedInlineWithSelectRelated):
     model = CurriculumRecord
-    raw_id_fields = ('group',)
+    #~ form = CurriculumRecordAdminForm
+    autocomplete_fields = ('group', 'subjects',)
+    list_select_related =  generate_list_select_related_for_group(
+        'group', 'parent', (
+            'group_stream',
+            'group_stream__specialty',
+            'group_stream__form',
+        )
+    ) + [
+        'curriculum',
+        'curriculum__group__specialty',
+        'curriculum__group__form',
+    ]
+
+class GroupYearFilter(YearFilter):
+    year_field_path = 'group__'
 
 @admin.register(Curriculum)
 class CurriculumAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     inlines = [
         CurriculumRecordInline,
     ]
+    list_display = ('group', 'semester',)
     list_filter = (
-        'group__specialty__faculty', SpecialtyYearFilter,
+        'group__specialty__faculty', GroupYearFilter,
         'group__form', 'semester',
     )
     list_per_page = LIST_PER_PAGE
@@ -267,62 +279,68 @@ class CurriculumAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
         'group__specialty',
         'group__form',
     ]
-    raw_id_fields = ('group',)
+    autocomplete_fields = ('group',)
     search_fields = (
         'group__specialty__name', 'group__specialty__number',
         'group__specialty__abbreviation', 'group__year'
     )
 
-class CurriculumRecordSubjectInline(admin.TabularInline):
-    model = CurriculumRecord.subjects.through
+class GroupGroupStreamYearFilter(YearFilter):
+    year_field_path = 'group__group_stream__'
 
-class CurriculumRecordTeacherInline(AdminInlineWithSelectRelated):
+class CurriculumRecordTeacherInline(admin.StackedInline):
     model = CurriculumRecord.teachers.through
-    #~ form = CurriculumRecordTeacherInlineForm
-    #~ raw_id_fields = ('teacher',)
-    list_select_related = generate_list_select_related_for_group(
-        'group', 'parent', (
-            'group_stream',
-            'group_stream__specialty',
-            'group_stream__form',
-        )
-    ) + [
-        'teacher', 'teacher__person',
-    ]
+    autocomplete_fields = ('group', 'teacher',)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         obj = request._obj_
+        field = super().formfield_for_foreignkey(db_field, request, **kwargs)
         if db_field.name == "group":
             if obj is not None:
                 filter_dict = {
                     'group_stream__exact': obj.group.group_stream_id,
                 }
-                query = Group.objects.filter(**filter_dict)
-                return TreeNodeChoiceField(query)
+                field.widget.attrs['data-filter'] = json.dumps(filter_dict)
+                field.queryset = field.queryset.filter(**filter_dict)
             else:
-                return TreeNodeChoiceField(Group.objects.none())
-        field = super().formfield_for_foreignkey(db_field, request, **kwargs)
+                filter_dict = {'group_stream__exact': 0}
+                field.widget.attrs['data-filter'] = json.dumps(filter_dict)
+                field.queryset = field.queryset.none()
         if db_field.name == "teacher":
             if obj is not None:
                 departments = [i.department_id for i in obj.subjects.all()]
-                filter_dict = {
-                    'department__in': departments,
-                }
+                filter_dict = {'department__in': departments}
+                field.widget.attrs['data-filter'] = json.dumps(filter_dict)
                 field.queryset = field.queryset.filter(**filter_dict)
             else:
+                filter_dict = {'department__in': 0}
+                field.widget.attrs['data-filter'] = json.dumps(filter_dict)
                 field.queryset = field.queryset.none()
         return field
 
 @admin.register(CurriculumRecord)
 class CurriculumRecordAdmin(ImportExportModelAdmin):
-    inlines = [
-        CurriculumRecordSubjectInline,
-        CurriculumRecordTeacherInline,
-    ]
-    raw_id_fields = ('curriculum', 'group',)
+    #~ list_display = ('__str__', 'specialty', 'year', 'form',)
+    list_filter = (
+        'curriculum__group__specialty__faculty',
+        GroupGroupStreamYearFilter,
+        'curriculum__group__form', 'curriculum__semester',
+    )
+    list_per_page = LIST_PER_PAGE
+    #~ list_select_related = [
+        #~ 'cir',
+        #~ 'group__specialty',
+        #~ 'group__form',
+    #~ ]
+    autocomplete_fields = ('curriculum', 'group', 'subjects', )
+    #~ search_fields = (
+        #~ 'group__specialty__name', 'group__specialty__number',
+        #~ 'group__specialty__abbreviation', 'group__year'
+    #~ )
 
     def get_inline_instances(self, request, obj=None):
-        if obj: return [inline(self.model, self.admin_site) for inline in self.inlines]
+        if obj:
+            return [CurriculumRecordTeacherInline(self.model, self.admin_site)]
         else: return []
 
     def get_readonly_fields(self, request, obj=None):
