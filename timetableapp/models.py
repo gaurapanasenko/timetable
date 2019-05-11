@@ -43,6 +43,7 @@ class Faculty(models.Model):
     class Meta:
         verbose_name = _('Faculty object')
         verbose_name_plural = _('faculties')
+        ordering = ['abbreviation', 'name']
 
 class Department(models.Model):
     faculty = models.ForeignKey(
@@ -71,6 +72,7 @@ class Department(models.Model):
     class Meta:
         verbose_name = _('Department object')
         verbose_name_plural = _('departments')
+        ordering = ['abbreviation', 'name']
 
 class Subject(models.Model):
     name = models.CharField(
@@ -88,11 +90,13 @@ class Subject(models.Model):
     )
 
     def __str__(self):
-        return self.name
+        return '%s - %s' % (self.name, self.department)
 
     class Meta:
         verbose_name = _('Subject object')
         verbose_name_plural = _('subjects')
+        unique_together = [['name', 'department']]
+        ordering = ['name', 'department']
 
 class Person(models.Model):
     first_name = models.CharField(
@@ -118,6 +122,7 @@ class Person(models.Model):
         verbose_name = _('Person object')
         verbose_name_plural = _('persons')
         unique_together = [['first_name', 'middle_name', 'last_name']]
+        ordering = ['first_name', 'middle_name', 'last_name']
 
 class Teacher(models.Model):
     person = models.ForeignKey(
@@ -145,12 +150,12 @@ class Teacher(models.Model):
     class Meta:
         verbose_name = _('Teacher object')
         verbose_name_plural = _('teachers')
+        ordering = ['person',]
 
 class Specialty(models.Model):
     name = models.CharField(
         verbose_name=_('name'),
         max_length=128,
-        unique=True,
     )
     number = models.PositiveSmallIntegerField(
         verbose_name=_('number'),
@@ -176,6 +181,7 @@ class Specialty(models.Model):
     class Meta:
         verbose_name = _('Specialty object')
         verbose_name_plural = _('specialties')
+        ordering = ['abbreviation',]
 
 class Building(models.Model):
     number = models.PositiveSmallIntegerField(
@@ -213,6 +219,7 @@ class Building(models.Model):
     class Meta:
         verbose_name = _('Building object')
         verbose_name_plural = _('buildings')
+        ordering = ['number',]
 
 
 class Classroom(models.Model):
@@ -223,7 +230,6 @@ class Classroom(models.Model):
     )
     number = models.PositiveSmallIntegerField(
         verbose_name=_('number'),
-        unique=True,
     )
 
     def __str__(self):
@@ -232,6 +238,8 @@ class Classroom(models.Model):
     class Meta:
         verbose_name = _('Classroom object')
         verbose_name_plural = _('classrooms')
+        unique_together = [['building', 'number']]
+        ordering = ['building', 'number',]
 
 class FormOfStudy(models.Model):
     name = models.CharField(
@@ -262,7 +270,7 @@ class FormOfStudy(models.Model):
     class Meta:
         verbose_name = _('Form of study object')
         verbose_name_plural = _('forms of study')
-        ordering = ['priority']
+        ordering = ['priority', 'suffix']
 
 class FormOfStudySemester(models.Model):
     form = models.ForeignKey(
@@ -287,20 +295,24 @@ class GroupStream(ReadOnlyOnExistForeignKey, models.Model):
         'Specialty',
         on_delete=models.PROTECT,
         verbose_name=_('specialty'),
+        db_index=True,
     )
     year = models.PositiveSmallIntegerField(
         verbose_name=_('year'),
         default=current_year,
         validators=[year_min_value, year_max_value],
+        db_index=True,
     )
     form = models.ForeignKey(
         'FormOfStudy',
         on_delete=models.PROTECT,
         verbose_name=_('form of study'),
+        db_index=True,
         #~ default={'priority': 1},
     )
+
     readonly_fields = [
-        (('GroupStreamSemester',), ('year', 'form_id'))
+        (('Curriculum',), ('year', 'form_id'))
     ]
 
     def save(self, *args, **kwargs):
@@ -336,7 +348,7 @@ class GroupStream(ReadOnlyOnExistForeignKey, models.Model):
                         'start_date': std,
                         'end_date': etd,
                     }
-                    GroupStreamSemester.objects.create(**args_dict)
+                    Curriculum.objects.create(**args_dict)
         if not Group.objects.filter(group_stream=self).exists():
             Group.objects.create(group_stream=self)
 
@@ -351,49 +363,7 @@ class GroupStream(ReadOnlyOnExistForeignKey, models.Model):
         verbose_name = _('Group stream object')
         verbose_name_plural = _('group streams')
         unique_together = [['specialty', 'year', 'form']]
-
-class GroupStreamSemester(models.Model):
-    group = models.ForeignKey(
-        'GroupStream',
-        on_delete=models.CASCADE,
-        verbose_name=_('group stream'),
-    )
-
-    semester = models.PositiveSmallIntegerField(
-        verbose_name=_('semester'),
-        validators=[MinValueValidator(1)],
-    )
-
-    start_date = models.DateField(
-        verbose_name=_('start date'),
-        default=None,
-        blank=True,
-        null=True,
-    )
-
-    end_date = models.DateField(
-        verbose_name=_('end date'),
-        default=None,
-        blank=True,
-        null=True,
-    )
-
-    def clean(self):
-        if self.start_date and self.end_date and self.start_date > self.end_date:
-            error = _("End date should be greater than start date.")
-            raise ValidationError(error)
-        super(GroupStreamSemester, self).clean()
-
-    def __str__(self):
-        s = self.semester
-        n = _('semester')
-        semester = format_lazy('{semester} {name}', semester=s, name=n)
-        return '{} - {}'.format(self.group, semester)
-
-    class Meta:
-        verbose_name = _('Group stream semester object')
-        verbose_name_plural = _('group stream semesters')
-        unique_together = [['group', 'semester']]
+        ordering = ['-year', 'specialty', 'form']
 
 class Group(ReadOnlyOnExistForeignKey, MPTTModel):
     def generate_number_choices():
@@ -408,6 +378,7 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
         'self',
         on_delete=models.CASCADE,
         verbose_name=_('parent node'),
+        db_index=True,
         default=None,
         blank=True,
         null=True,
@@ -417,6 +388,7 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
         on_delete=models.CASCADE,
         verbose_name=_('group stream'),
         help_text=_('If Parent node is set, this field fills automatically while saving.'),
+        db_index=True,
         default=None,
         blank=True,
         null=True,
@@ -424,6 +396,7 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
     number = models.PositiveSmallIntegerField(
         verbose_name=_('number'),
         choices=NUMBER_CHOICES,
+        db_index=True,
         default=None,
         blank=True,
         null=True,
@@ -482,10 +455,10 @@ class Group(ReadOnlyOnExistForeignKey, MPTTModel):
         verbose_name = _('Group object')
         verbose_name_plural = _('groups')
         unique_together = [['parent', 'number']]
-        index_together = [['parent', 'group_stream']]
+        index_together = [['parent', 'group_stream', 'number']]
 
     class MPTTMeta:
-        order_insertion_by = ['number']
+        order_insertion_by = ['group_stream', 'number',]
 
 class Curriculum(models.Model):
     group = models.ForeignKey(
@@ -497,6 +470,26 @@ class Curriculum(models.Model):
         verbose_name=_('semester'),
     )
 
+    start_date = models.DateField(
+        verbose_name=_('start date'),
+        default=None,
+        blank=True,
+        null=True,
+    )
+
+    end_date = models.DateField(
+        verbose_name=_('end date'),
+        default=None,
+        blank=True,
+        null=True,
+    )
+
+    def clean(self):
+        if self.start_date and self.end_date and self.start_date > self.end_date:
+            error = _("End date should be greater than start date.")
+            raise ValidationError(error)
+        super(Curriculum, self).clean()
+
     def __str__(self):
         s = self.semester
         n = _('semester')
@@ -507,6 +500,7 @@ class Curriculum(models.Model):
         verbose_name = _('Curriculum object')
         verbose_name_plural = _('curriculums')
         unique_together = [['group', 'semester']]
+        ordering = ['group', 'semester',]
 
 
 class CurriculumRecord(models.Model):
@@ -566,32 +560,7 @@ class CurriculumRecord(models.Model):
     class Meta:
         verbose_name = _('Curriculum record object')
         verbose_name_plural = _('curriculum records')
-
-#~ class CurriculumRecordSubject(models.Model):
-    #~ record = models.ForeignKey(
-        #~ 'CurriculumRecord',
-        #~ on_delete=models.CASCADE,
-        #~ verbose_name=_('curriculum record'),
-    #~ )
-
-    #~ subject = models.ForeignKey(
-        #~ 'Subject',
-        #~ on_delete=models.CASCADE,
-        #~ verbose_name=_('subject'),
-    #~ )
-
-    #~ def get_group(self):
-        #~ return self.record.group
-
-    #~ def get_semester(self):
-        #~ return self.record.get_semester()
-
-    #~ def __str__(self):
-        #~ return str(self.subject)
-
-    #~ class Meta:
-        #~ verbose_name = _('Subject for curriculum record object')
-        #~ verbose_name_plural = _('subjects for curriculum records')
+        ordering = ['curriculum', 'group',]
 
 class CurriculumRecordTeacher(models.Model):
     RESPONSIBILITY_CHOICES = [
@@ -624,16 +593,6 @@ class CurriculumRecordTeacher(models.Model):
         verbose_name=_('teacher'),
         help_text=_('To assign teacher, you need choose at least one subject.'),
     )
-
-    #~ def save(self, *args, **kwargs):
-        #~ if not self.subject_id and self.teacher_id and self.record_id:
-            #~ flt_dct = {
-                #~ 'record__exact': self.record_id,
-                #~ 'subject__department__exact': self.teacher.department_id
-            #~ }
-            #~ subject = CurriculumRecordSubject.objects.filter(**flt_dct).first()
-            #~ self.subject = subject
-        #~ super(CurriculumRecordTeacher, self).save(*args, **kwargs)
 
     def clean(self):
         record = None

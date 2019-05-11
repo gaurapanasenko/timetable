@@ -5,6 +5,7 @@
         var settings = $.extend({
             ajax: {
                 data: function(params) {
+                    console.log(filter);
                     return {
                         term: params.term,
                         page: params.page,

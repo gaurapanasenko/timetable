@@ -1,10 +1,11 @@
-import json
+import json, regex
 
 from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib import admin
 from django.urls import path
+from django.db.models import Q
 
 from import_export.admin import ImportExportModelAdmin
 from mptt.admin import MPTTModelAdmin
@@ -16,30 +17,31 @@ from django_improvements.admin import (
     AdminWithSelectRelated,
     FilterWithSelectRelated,
 )
+from admin_auto_filters.filters import AutocompleteFilter
 
 from .settings import *
 
-from .models import Faculty
-from .models import Department
-from .models import Subject
-from .models import Person
-from .models import Teacher
-from .models import Specialty
-from .models import FormOfStudy
-from .models import FormOfStudySemester
-from .models import GroupStream
-from .models import Group
-from .models import Building
-from .models import Classroom
-from .models import Curriculum
-from .models import CurriculumRecord
-from .models import GroupStreamSemester
-from .models import TimetableRecording
+from .models import (
+    Faculty,
+    Department,
+    Subject,
+    Person,
+    Teacher,
+    Specialty,
+    FormOfStudy,
+    FormOfStudySemester,
+    GroupStream,
+    Group,
+    Building,
+    Classroom,
+    Curriculum,
+    CurriculumRecord,
+    TimetableRecording
+)
 
 from .forms import (
     FormOfStudySemesterFormset,
-    GroupStreamSemesterForm,
-    #~ CurriculumRecordAdminForm,
+    CurriculumForm,
 )
 
 def generate_list_select_related_for_group(prefix, parent, list_select):
@@ -174,14 +176,14 @@ class YearFilter(admin.SimpleListFilter):
                     return queryset.filter(**args)
                 except ValueError: pass
 
-class GroupStreamSemesterInline(admin.TabularInline):
-    model = GroupStreamSemester
-    form = GroupStreamSemesterForm
+class CurriculumInline(admin.TabularInline):
+    model = Curriculum
+    form = CurriculumForm
 
 @admin.register(GroupStream)
 class GroupStreamAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     inlines = [
-        GroupStreamSemesterInline,
+        CurriculumInline,
     ]
     list_display = ('__str__', 'specialty', 'year', 'form',)
     list_filter = ('specialty__faculty', YearFilter, 'form',)
@@ -192,6 +194,31 @@ class GroupStreamAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
         'specialty__name', 'specialty__number',
         'specialty__abbreviation', 'year'
     )
+
+    def get_search_results(self, request, queryset, search_term):
+        filter_q = Q()
+        reg = regex.compile(r"^(\p{L}+?)-((\d)((\d)(\p{L}*?)([0-9-]*))?)?$", regex.IGNORECASE)
+        st = ""
+        mgth = MAX_GROUP_TREE_HEIGHT
+        for i in search_term.split(' '):
+            if reg.match(i):
+                g = reg.search(i)
+                filter_dict = {
+                    'specialty__abbreviation__exact': g.group(1),
+                }
+                if g.group(3):
+                    y = str(g.group(3))
+                    if g.group(5): y += str(g.group(5))
+                    filter_dict['year__contains'] = y
+                if g.group(6):
+                    filter_dict['form__suffix'] = g.group(6)
+                filter_q = filter_q | Q(**filter_dict)
+            else:
+                st += " " + i
+        queryset, use_distinct = super().get_search_results(request, queryset, st)
+        if filter_q:
+            queryset = queryset.filter(filter_q)
+        return queryset, use_distinct
 
 class GroupInline(AdminInlineWithSelectRelated):
     model = Group
@@ -236,7 +263,47 @@ class GroupAdmin(AdminWithSelectRelated, MPTTModelAdmin, ImportExportModelAdmin)
         else: return []
 
     def get_search_results(self, request, queryset, search_term):
-        queryset, use_distinct = super().get_search_results(request, queryset, search_term)
+        prefix = ''
+        filter_q = Q()
+        reg = regex.compile(r"^(\p{L}+?)-((\d)((\d)(\p{L}*?)([0-9-]*))?)?$", regex.IGNORECASE)
+        st = ""
+        mgth = MAX_GROUP_TREE_HEIGHT
+        for i in search_term.split(' '):
+            if reg.match(i):
+                g = reg.search(i)
+                filter_dict = {
+                    'group_stream__specialty__abbreviation__exact': g.group(1),
+                }
+                if g.group(3):
+                    y = str(g.group(3))
+                    if g.group(5): y += str(g.group(5))
+                    filter_dict['group_stream__year__contains'] = y
+                if g.group(6):
+                    filter_dict['group_stream__form__suffix'] = g.group(6)
+                elif g.group(7) and g.group(7)[0] == '-':
+                    filter_dict['group_stream__form__suffix'] = ''
+                filter_qq = Q()
+                if g.group(7) and len(g.group(7)) > 1 and g.group(7)[0] == '-':
+                    s = []
+                    for i in g.group(7)[1:].split('-'):
+                        if i: s.append(i)
+                        else: break
+                    if s:
+                        r = mgth - len(s)
+                        for i in range(0, r + 1):
+                            fd = {
+                                '%s__isnull' % ('__parent' * (mgth - i + 1))[2:]: True,
+                            }
+                            for j in range(0, len(s)):
+                                fd['%snumber__exact' % ('parent__' * (mgth - j - i - 1))] = s[j]
+                            filter_qq = filter_qq | Q(**fd)
+                            print(fd)
+                filter_q = filter_q | Q(filter_qq, **filter_dict)
+            else:
+                st += " " + i
+        queryset, use_distinct = super().get_search_results(request, queryset, st)
+        if filter_q:
+            queryset = queryset.filter(filter_q)
         p = request.path.find('/autocomplete') != -1
         f = 'filter' in request.GET
         if request.is_ajax() and p and f:
@@ -246,7 +313,6 @@ class GroupAdmin(AdminWithSelectRelated, MPTTModelAdmin, ImportExportModelAdmin)
 
 class CurriculumRecordInline(AdminStackedInlineWithSelectRelated):
     model = CurriculumRecord
-    #~ form = CurriculumRecordAdminForm
     autocomplete_fields = ('group', 'subjects',)
     list_select_related =  generate_list_select_related_for_group(
         'group', 'parent', (
@@ -263,6 +329,10 @@ class CurriculumRecordInline(AdminStackedInlineWithSelectRelated):
 class GroupYearFilter(YearFilter):
     year_field_path = 'group__'
 
+class CurriculumGroupStreamFilter(AutocompleteFilter):
+    title = 'Group stream'
+    field_name = 'group'
+
 @admin.register(Curriculum)
 class CurriculumAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     inlines = [
@@ -271,7 +341,7 @@ class CurriculumAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     list_display = ('group', 'semester',)
     list_filter = (
         'group__specialty__faculty', GroupYearFilter,
-        'group__form', 'semester',
+        'group__form', 'semester', CurriculumGroupStreamFilter,
     )
     list_per_page = LIST_PER_PAGE
     list_select_related = [
@@ -282,8 +352,10 @@ class CurriculumAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     autocomplete_fields = ('group',)
     search_fields = (
         'group__specialty__name', 'group__specialty__number',
-        'group__specialty__abbreviation', 'group__year'
+        'group__specialty__abbreviation', 'group__year',
     )
+    class Media:
+        pass
 
 class GroupGroupStreamYearFilter(YearFilter):
     year_field_path = 'group__group_stream__'
@@ -318,25 +390,51 @@ class CurriculumRecordTeacherInline(admin.StackedInline):
                 field.queryset = field.queryset.none()
         return field
 
+class CurriculumRecordCurriculumGroupFilter(AutocompleteFilter):
+    title = _('group stream')
+    field_name = 'curriculum__group'
+
 @admin.register(CurriculumRecord)
-class CurriculumRecordAdmin(ImportExportModelAdmin):
-    #~ list_display = ('__str__', 'specialty', 'year', 'form',)
+class CurriculumRecordAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
+    list_display = (
+        'group', 'get_semester', 'get_subjects',
+        'lectures', 'practices', 'laboratory', 'independent_work',
+    )
     list_filter = (
         'curriculum__group__specialty__faculty',
         GroupGroupStreamYearFilter,
         'curriculum__group__form', 'curriculum__semester',
+        CurriculumRecordCurriculumGroupFilter,
     )
     list_per_page = LIST_PER_PAGE
-    #~ list_select_related = [
-        #~ 'cir',
-        #~ 'group__specialty',
-        #~ 'group__form',
-    #~ ]
+    list_select_related = generate_list_select_related_for_group(
+        'group', 'parent', (
+            'group_stream',
+            'group_stream__specialty',
+            'group_stream__form',
+        )
+    ) + [
+        'curriculum',
+        'curriculum__group__specialty',
+        'curriculum__group__form',
+    ]
     autocomplete_fields = ('curriculum', 'group', 'subjects', )
-    #~ search_fields = (
-        #~ 'group__specialty__name', 'group__specialty__number',
-        #~ 'group__specialty__abbreviation', 'group__year'
-    #~ )
+    search_fields = (
+        'curriculum__group__specialty__name',
+        'curriculum__group__specialty__number',
+        'curriculum__group__specialty__abbreviation',
+        'curriculum__group__year',
+        'subjects__name',
+    )
+
+    def get_subjects(self, obj):
+        return "/".join([str(i) for i in obj.subjects.all()])
+    get_subjects.short_description = _("subject")
+
+    def get_semester(self, obj):
+        return obj.curriculum.semester
+    get_semester.short_description = _("semester")
+    get_semester.admin_order_field = 'curriculum__semester'
 
     def get_inline_instances(self, request, obj=None):
         if obj:
@@ -350,6 +448,14 @@ class CurriculumRecordAdmin(ImportExportModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
         request._obj_ = obj
         return super(CurriculumRecordAdmin, self).get_form(request, obj, **kwargs)
+
+    def lookup_allowed(self, key, *args, **kwargs):
+        if key  == 'curriculum__group__id__exact':
+            return True
+        return super(CurriculumRecordAdmin, self).lookup_allowed(key,  *args, **kwargs)
+
+    class Media:
+        pass
 
 
 admin.site.register(TimetableRecording)
