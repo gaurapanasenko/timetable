@@ -125,7 +125,7 @@ class Person(models.Model):
         ordering = ['first_name', 'middle_name', 'last_name']
 
 class Teacher(models.Model):
-    person = models.ForeignKey(
+    person = models.OneToOneField(
         'Person',
         on_delete=models.PROTECT,
         verbose_name=_('person'),
@@ -134,9 +134,6 @@ class Teacher(models.Model):
         'Department',
         on_delete=models.PROTECT,
         verbose_name=_('department'),
-        default=None,
-        null=True,
-        blank=True,
     )
     #~ work_time = models.BigIntegerField(
         #~ verbose_name=_('work time'),

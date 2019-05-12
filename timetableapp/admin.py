@@ -4,8 +4,10 @@ from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, reverse
 from django.db.models import Q
+from django.template.defaultfilters import escape
+from django.utils.safestring import mark_safe
 
 from import_export.admin import ImportExportModelAdmin
 from mptt.admin import MPTTModelAdmin
@@ -55,24 +57,50 @@ def generate_list_select_related_for_group(prefix, parent, list_select):
             arr.append('__'.join(filter(None, t)))
     return arr
 
+class DepartmentInline(admin.TabularInline):
+    model = Department
+    show_change_link = True
+
+class SpecialtyInline(admin.TabularInline):
+    model = Specialty
+    show_change_link = True
+
 @admin.register(Faculty)
 class FacultyAdmin(ImportExportModelAdmin):
+    inlines = [DepartmentInline, SpecialtyInline,]
     list_display = ('name', 'abbreviation',)
+    list_display_links = ('name', 'abbreviation',)
     list_per_page = LIST_PER_PAGE
     search_fields = ('name', 'abbreviation',)
 
+class SubjectInline(admin.TabularInline):
+    model = Subject
+    show_change_link = True
+
+class TeacherInline(admin.TabularInline):
+    model = Teacher
+    autocomplete_fields = ('person',)
+    show_change_link = True
 
 @admin.register(Department)
 class DepartmentAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
-    list_display = ('name', 'faculty', 'abbreviation',)
+    inlines = [SubjectInline, TeacherInline,]
+    list_display = ('name', 'faculty_link', 'abbreviation',)
     list_filter = ('faculty', )
     list_per_page = LIST_PER_PAGE
     list_select_related = ('faculty',)
     search_fields = ('name', 'abbreviation',)
 
+    def faculty_link(self, obj=None):
+        if obj and obj.faculty_id:
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_faculty_change", args=(obj.faculty_id,)) , escape(obj.faculty)))
+        else: return '-'
+    faculty_link.short_description = _("faculty")
+    faculty_link.admin_order_field = 'faculty'
+
 @admin.register(Subject)
 class SubjectAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
-    list_display = ('name', 'department',)
+    list_display = ('name', 'department_link',)
     list_filter = ('department__faculty',)
     list_per_page = LIST_PER_PAGE
     list_select_related = ('department',)
@@ -82,15 +110,24 @@ class SubjectAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
         'department__faculty__abbreviation', 'department__abbreviation',
     )
 
+    def department_link(self, obj=None):
+        if obj and obj.department_id:
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_department_change", args=(obj.department_id,)) , escape(obj.department)))
+        else: return '-'
+    department_link.short_description = _("department")
+    department_link.admin_order_field = 'department'
+
 @admin.register(Person)
 class PersonAdmin(ImportExportModelAdmin):
+    inlines = [TeacherInline,]
     list_display = ('first_name', 'middle_name', 'last_name',)
+    list_display_links = ('first_name', 'middle_name', 'last_name',)
     list_per_page = LIST_PER_PAGE
     search_fields = ('first_name', 'middle_name', 'last_name',)
 
 @admin.register(Teacher)
 class TeacherAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
-    list_display = ('person', 'department',)
+    list_display = ('__str__', 'person_link', 'department_link',)
     list_filter = ('department__faculty',)
     list_per_page = LIST_PER_PAGE
     list_select_related = ('person', 'department', )
@@ -102,6 +139,20 @@ class TeacherAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
         'department__abbreviation',
     )
 
+    def person_link(self, obj=None):
+        if obj and obj.person_id:
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_person_change", args=(obj.person_id,)) , escape(obj.person)))
+        else: return '-'
+    person_link.short_description = _("person")
+    person_link.admin_order_field = 'person'
+
+    def department_link(self, obj=None):
+        if obj and obj.department_id:
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_department_change", args=(obj.department_id,)) , escape(obj.department)))
+        else: return '-'
+    department_link.short_description = _("department")
+    department_link.admin_order_field = 'department'
+
     def get_search_results(self, request, queryset, search_term):
         queryset, use_distinct = super().get_search_results(request, queryset, search_term)
         p = request.path.find('/autocomplete') != -1
@@ -111,9 +162,18 @@ class TeacherAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
             queryset = queryset.filter(**filter_dict)
         return queryset, use_distinct
 
+class GroupStreamInline(admin.TabularInline):
+    model = GroupStream
+    show_change_link = True
+
+    def get_queryset(self, request):
+        qs = super(GroupStreamInline, self).get_queryset(request)
+        return qs.filter(year=current_year())
+
 @admin.register(Specialty)
 class SpecialtyAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
-    list_display = ('name', 'number', 'abbreviation', 'faculty',)
+    inlines = [GroupStreamInline,]
+    list_display = ('name', 'number', 'abbreviation', 'faculty_link',)
     list_filter = ('faculty',)
     list_per_page = LIST_PER_PAGE
     list_select_related = ('faculty',)
@@ -122,19 +182,39 @@ class SpecialtyAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
         'faculty__name', 'faculty__abbreviation',
     )
 
+    def faculty_link(self, obj=None):
+        if obj and obj.faculty_id:
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_faculty_change", args=(obj.faculty_id,)) , escape(obj.faculty)))
+        else: return '-'
+    faculty_link.short_description = _("faculty")
+    faculty_link.admin_order_field = 'faculty'
+
+class ClassroomInline(admin.TabularInline):
+    model = Classroom
+    show_change_link = True
+
 @admin.register(Building)
 class BuildingAdmin(ImportExportModelAdmin):
+    inlines = [ClassroomInline,]
     list_display = ('number', 'address',)
     list_per_page = LIST_PER_PAGE
     search_fields = ('number', 'address',)
 
 @admin.register(Classroom)
 class ClassroomAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
-    list_display = ('building', 'number',)
+    list_display = ('__str__', 'building_link', 'number',)
+    list_display_links = ('__str__', 'number',)
     list_filter = ('building',)
     list_per_page = LIST_PER_PAGE
     list_select_related = ('building',)
     search_fields = ('number',)
+
+    def building_link(self, obj=None):
+        if obj and obj.building_id:
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_building_change", args=(obj.building_id,)) , escape(obj.building)))
+        else: return '-'
+    building_link.short_description = _("building")
+    building_link.admin_order_field = 'building'
 
 class FormOfStudySemesterInline(admin.TabularInline):
     model = FormOfStudySemester
@@ -179,13 +259,14 @@ class YearFilter(admin.SimpleListFilter):
 class CurriculumInline(admin.TabularInline):
     model = Curriculum
     form = CurriculumForm
+    show_change_link = True
 
 @admin.register(GroupStream)
 class GroupStreamAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     inlines = [
         CurriculumInline,
     ]
-    list_display = ('__str__', 'specialty', 'year', 'form',)
+    list_display = ('__str__', 'specialty_link', 'year', 'form_link',)
     list_filter = ('specialty__faculty', YearFilter, 'form',)
     list_per_page = LIST_PER_PAGE
     list_select_related = ('specialty', 'form')
@@ -194,6 +275,20 @@ class GroupStreamAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
         'specialty__name', 'specialty__number',
         'specialty__abbreviation', 'year'
     )
+
+    def specialty_link(self, obj=None):
+        if obj and obj.specialty_id:
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_specialty_change", args=(obj.specialty_id,)) , escape(obj.specialty)))
+        else: return '-'
+    specialty_link.short_description = _("specialty")
+    specialty_link.admin_order_field = 'specialty'
+
+    def form_link(self, obj=None):
+        if obj and obj.form_id:
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_formofstudy_change", args=(obj.form_id,)) , escape(obj.form)))
+        else: return '-'
+    form_link.short_description = _("form")
+    form_link.admin_order_field = 'form'
 
     def get_search_results(self, request, queryset, search_term):
         filter_q = Q()
@@ -230,12 +325,14 @@ class GroupInline(AdminInlineWithSelectRelated):
             'group_stream__form',
         )
     )
+    show_change_link = True
 
 class GroupStreamYearFilter(YearFilter):
     year_field_path = 'group_stream__'
 
 @admin.register(Group)
 class GroupAdmin(AdminWithSelectRelated, MPTTModelAdmin, ImportExportModelAdmin):
+    list_display = ('__str__', 'group_stream_link',)
     inlines = [GroupInline,]
     list_filter = (
         'group_stream__specialty__faculty', GroupStreamYearFilter,
@@ -258,8 +355,24 @@ class GroupAdmin(AdminWithSelectRelated, MPTTModelAdmin, ImportExportModelAdmin)
         'number',
     )
 
+    def group_stream_link(self, obj=None):
+        if obj and obj.group_stream_id:
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_groupstream_change", args=(obj.group_stream_id,)), escape(obj.group_stream)))
+        else: return '-'
+    group_stream_link.short_description = _("group stream")
+    group_stream_link.admin_order_field = 'group_stream'
+
+    def parent_link(self, obj=None):
+        if obj and obj.parent_id:
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_group_change", args=(obj.parent_id,)), escape(obj.parent)))
+        else: return '-'
+    parent_link.short_description = _("parent node")
+    parent_link.admin_order_field = 'parent'
+
     def get_readonly_fields(self, request, obj=None):
-        if obj: return ['group_stream', 'parent',]
+        if obj: return [
+            'group_stream_link', 'parent_link', 'group_stream', 'parent',
+        ]
         else: return []
 
     def get_search_results(self, request, queryset, search_term):
@@ -297,7 +410,6 @@ class GroupAdmin(AdminWithSelectRelated, MPTTModelAdmin, ImportExportModelAdmin)
                             for j in range(0, len(s)):
                                 fd['%snumber__exact' % ('parent__' * (mgth - j - i - 1))] = s[j]
                             filter_qq = filter_qq | Q(**fd)
-                            print(fd)
                 filter_q = filter_q | Q(filter_qq, **filter_dict)
             else:
                 st += " " + i
@@ -325,6 +437,7 @@ class CurriculumRecordInline(AdminStackedInlineWithSelectRelated):
         'curriculum__group__specialty',
         'curriculum__group__form',
     ]
+    show_change_link = True
 
 class GroupYearFilter(YearFilter):
     year_field_path = 'group__'
@@ -338,7 +451,7 @@ class CurriculumAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     inlines = [
         CurriculumRecordInline,
     ]
-    list_display = ('group', 'semester',)
+    list_display = ('__str__', 'group_link', 'semester',)
     list_filter = (
         'group__specialty__faculty', GroupYearFilter,
         'group__form', 'semester', CurriculumGroupStreamFilter,
@@ -354,6 +467,14 @@ class CurriculumAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
         'group__specialty__name', 'group__specialty__number',
         'group__specialty__abbreviation', 'group__year',
     )
+
+    def group_link(self, obj=None):
+        if obj and obj.group_id:
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_groupstream_change", args=(obj.group_id,)) , escape(obj.group)))
+        else: return '-'
+    group_link.short_description = _("group stream")
+    group_link.admin_order_field = 'group'
+
     class Media:
         pass
 
@@ -397,7 +518,7 @@ class CurriculumRecordCurriculumGroupFilter(AutocompleteFilter):
 @admin.register(CurriculumRecord)
 class CurriculumRecordAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     list_display = (
-        'group', 'get_semester', 'get_subjects',
+        '__str__', 'group_link', 'get_semester', 'subjects_link',
         'lectures', 'practices', 'laboratory', 'independent_work',
     )
     list_filter = (
@@ -427,9 +548,29 @@ class CurriculumRecordAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
         'subjects__name',
     )
 
-    def get_subjects(self, obj):
-        return "/".join([str(i) for i in obj.subjects.all()])
-    get_subjects.short_description = _("subject")
+    def curriculum_link(self, obj=None):
+        if obj and obj.curriculum_id:
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_curriculum_change", args=(obj.curriculum_id,)) , escape(obj.curriculum)))
+        else: return '-'
+    curriculum_link.short_description = _("curriculum")
+    curriculum_link.admin_order_field = 'curriculum'
+
+    def group_link(self, obj=None):
+        if obj and obj.group_id:
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_group_change", args=(obj.group_id,)) , escape(obj.group)))
+        else: return '-'
+    group_link.short_description = _("group")
+    group_link.admin_order_field = 'group'
+
+    def subjects_link(self, obj=None):
+        if obj and obj.subjects.exists():
+            s = []
+            for i in obj.subjects.all():
+                mst = (reverse("admin:timetableapp_subject_change", args=(i.id,)) , escape(i))
+                s.append('<a href="%s">%s</a>' % mst)
+            return mark_safe(" / ".join(s))
+        else: return '-'
+    subjects_link.short_description = _("subjects")
 
     def get_semester(self, obj):
         return obj.curriculum.semester
@@ -442,7 +583,9 @@ class CurriculumRecordAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
         else: return []
 
     def get_readonly_fields(self, request, obj=None):
-        if obj: return ['curriculum', 'group',]
+        if obj: return [
+            'curriculum_link', 'group_link', 'curriculum', 'group',
+        ]
         else: return []
 
     def get_form(self, request, obj=None, **kwargs):
