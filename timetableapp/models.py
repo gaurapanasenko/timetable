@@ -12,6 +12,9 @@ from mptt.models import MPTTModel, TreeForeignKey
 
 from yearlessdate.models import YearlessDateField, YearlessDateRangeField
 from django_improvements.models import ReadOnlyOnExistForeignKey
+from lesson_field.helpers import Lesson
+from lesson_field.models import LessonField
+from lesson_field.settings import *
 
 from .settings import *
 
@@ -544,7 +547,7 @@ class CurriculumRecord(models.Model):
         return self.curriculum.semester
 
     def get_subject_name(self):
-        return '/'.join(str(i) for i in self.subjects.all())
+        return '/'.join(str(i.name) for i in self.subjects.all())
 
     def __str__(self):
         subjects = self.get_subject_name()
@@ -592,30 +595,20 @@ class CurriculumRecordTeacher(models.Model):
     )
 
     def clean(self):
-        record = None
-        group = None
-        try: record = self.record
-        except CurriculumRecord.DoesNotExist as e: pass
-        try: group = self.group
-        except Group.DoesNotExist as e: pass
-        if record and group:
-            pg = record.group
+        if self.record_id and self.group_id:
+            pg = self.record.group
+            group = self.group
             if pg != group and not group.is_child(pg):
                 error = _("Group must be child of or same as group in record")
                 raise ValidationError(error)
         super(CurriculumRecordTeacher, self).clean()
 
     def validate_unique(self, exclude=None):
-        record = None
-        group = None
-        try: record = self.record
-        except CurriculumRecord.DoesNotExist as e: pass
-        try: group = self.group
-        except Group.DoesNotExist as e: pass
-        if record and group:
+        if self.record_id and self.group_id:
+            group = self.group
             arr = list(group.get_family().all()) if group else []
             args = {
-                'record': record,
+                'record': self.record,
                 'group__in': arr,
                 'responsibility': self.responsibility,
             }
@@ -640,24 +633,6 @@ class CurriculumRecordTeacher(models.Model):
 
 
 class TimetableRecording(models.Model):
-    def generate_lesson_choices():
-        arr = []
-        weeks = (_('numerator'), _('denominator'))
-        days = (
-            _('mon'), _('tue'), _('wed'), _('thu'), _('fri'),
-            _('sat'), _('sun')
-        )
-        n = _('lesson')
-        for ik, iv in enumerate(weeks):
-            for j in WORK_DAYS:
-                for k in range(1, MAX_LESSONS_DAY + 1):
-                    l = format_lazy('{lesson} {name}', lesson=k, name=n)
-                    val = ik * 256 + j * 32 + k
-                    arr.append((val, '%s - %s - %s' % (iv, days[j], l)))
-        return arr
-
-    LESSON_CHOICES = generate_lesson_choices()
-
     record = models.ForeignKey(
         'CurriculumRecord',
         on_delete=models.CASCADE,
@@ -670,10 +645,8 @@ class TimetableRecording(models.Model):
         verbose_name=_('group'),
     )
 
-    lesson = models.PositiveSmallIntegerField(
+    lesson = LessonField(
         verbose_name=_('lesson number'),
-        choices=LESSON_CHOICES,
-        default=0,
     )
 
     classroom = models.ForeignKey(
@@ -694,51 +667,55 @@ class TimetableRecording(models.Model):
         blank=True,
     )
 
+    start_date = models.DateField(
+        verbose_name=_('start date'),
+        default=None,
+        blank=True,
+        null=True,
+    )
+
+    end_date = models.DateField(
+        verbose_name=_('end date'),
+        default=None,
+        blank=True,
+        null=True,
+    )
+
     def clean(self):
-        record = None
-        group = None
-        try: record = self.record
-        except CurriculumRecord.DoesNotExist as e: pass
-        try: group = self.group
-        except Group.DoesNotExist as e: pass
-        if record and group:
-            pg = record.group
+        if self.record_id and self.group_id:
+            pg = self.record.group
+            group = self.group
             if pg != group and not group.is_child(pg):
                 error = _("Group must be child of or same as group in curriculum record")
                 raise ValidationError(error)
-        super(TimetableRecord, self).clean()
+        super(TimetableRecording, self).clean()
 
     def validate_unique(self, exclude=None):
-        record = None
-        group = None
-        try: record = self.record
-        except CurriculumRecord.DoesNotExist as e: pass
-        try: group = self.group
-        except Group.DoesNotExist as e: pass
-        if group:
+        if self.group_id:
+            group = self.group
             arr = list(group.get_family().all())
             args = {
-                'record': record,
+                'record': self.record_id,
                 'group__in': arr,
                 'lesson': self.lesson,
             }
-            f = TimetableRecord.objects.exclude(id=self.id).filter(**args)
+            f = TimetableRecording.objects.exclude(id=self.id).filter(**args)
             if f.exists():
                 error = _("Duplicate timetable record trough group {}.")
                 raise ValidationError(error.format(f.first().group))
-        super(TimetableRecord, self).validate_unique(exclude)
+        super(TimetableRecording, self).validate_unique(exclude)
 
     def __str__(self):
-        s = self.record.getSemester()
+        s = self.record.get_semester()
         n = _('semester')
         semester = format_lazy('{semester} {name}', semester=s, name=n)
-        lesson = dict(self.LESSON_CHOICES)[self.lesson]
-        args = (str(self.group), semester, lesson, self.record.getSubjectName())
+        lesson = str(self.lesson)
+        args = (str(self.group), semester, lesson, self.record.get_subject_name())
         return '%s - %s - %s - %s' % args
 
     class Meta:
         verbose_name = _('Timetable recording object')
         verbose_name_plural = _('timetable recordings')
         unique_together = [
-            ['record', 'group', 'lesson'], ['lesson', 'classroom']
+            ['record', 'group', 'lesson'],
         ]

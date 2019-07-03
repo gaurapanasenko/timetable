@@ -478,9 +478,6 @@ class CurriculumAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     class Media:
         pass
 
-class GroupGroupStreamYearFilter(YearFilter):
-    year_field_path = 'group__group_stream__'
-
 class CurriculumRecordTeacherInline(admin.StackedInline):
     model = CurriculumRecord.teachers.through
     autocomplete_fields = ('group', 'teacher',)
@@ -522,9 +519,7 @@ class CurriculumRecordAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
         'lectures', 'practices', 'laboratory', 'independent_work',
     )
     list_filter = (
-        'curriculum__group__specialty__faculty',
-        GroupGroupStreamYearFilter,
-        'curriculum__group__form', 'curriculum__semester',
+        'curriculum__semester',
         CurriculumRecordCurriculumGroupFilter,
     )
     list_per_page = LIST_PER_PAGE
@@ -600,5 +595,72 @@ class CurriculumRecordAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     class Media:
         pass
 
+class TimetableRecordingGroupFilter(AutocompleteFilter):
+    title = _('group')
+    field_name = 'group'
 
-admin.site.register(TimetableRecording)
+    def queryset(self, request, queryset):
+        if self.value():
+            g = Group.objects.filter(pk=self.value()).first()
+            args = {
+                'group__lft__gte': g.lft,
+                'group__rght__lte': g.rght,
+            }
+            return queryset.filter(**args)
+
+class TimetableRecordingClassroomFilter(AutocompleteFilter):
+    title = _('classroom')
+    field_name = 'classroom'
+
+class TimetableRecordingTeacherFilter(AutocompleteFilter):
+    title = _('teacher')
+    field_name = 'teacher'
+
+@admin.register(TimetableRecording)
+class TimetableRecordingAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
+    list_display = (
+        'group', 'get_semester', 'subjects_link', 'lesson',
+        'classroom', 'teacher',
+        'start_date', 'end_date',
+    )
+    list_filter = (
+        'record__curriculum__semester',
+        TimetableRecordingGroupFilter,
+        TimetableRecordingClassroomFilter,
+        TimetableRecordingTeacherFilter,
+    )
+    list_per_page = LIST_PER_PAGE
+    list_select_related = generate_list_select_related_for_group(
+        'group', 'parent', (
+            'group_stream',
+            'group_stream__specialty',
+            'group_stream__form',
+        )
+    ) + [
+        'record__curriculum',
+        'record__curriculum__group__specialty',
+        'record__curriculum__group__form',
+        'classroom',
+        'classroom__building',
+        'teacher',
+        'teacher__person',
+    ]
+    autocomplete_fields = ('record', 'group', 'classroom', 'teacher',)
+
+    def get_semester(self, obj):
+        return obj.record.curriculum.semester
+    get_semester.short_description = _("semester")
+    get_semester.admin_order_field = 'record__curriculum__semester'
+
+    def subjects_link(self, obj=None):
+        if obj and obj.record.subjects.exists():
+            s = []
+            for i in obj.record.subjects.all():
+                mst = (reverse("admin:timetableapp_subject_change", args=(i.id,)) , escape(i.name))
+                s.append('<a href="%s">%s</a>' % mst)
+            return mark_safe(" / <br>".join(s))
+        else: return '-'
+    subjects_link.short_description = _("subjects")
+
+    class Media:
+        pass
