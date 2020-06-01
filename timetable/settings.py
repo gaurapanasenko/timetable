@@ -43,7 +43,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'admin_auto_filters',
     'import_export',
-    'mptt',
 ]
 
 MIDDLEWARE = [

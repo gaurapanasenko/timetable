@@ -1,8 +1,8 @@
 backports.csv==1.0.7
-Django==2.2.1
+Django==2.2.10
 django-debug-toolbar==1.11
 django-import-export==1.2.0
-django-mptt==0.10.0
+#django-mptt==0.10.0
 django-suit==0.2.26
 #mysqlclient==1.4.2.post1
 #PyYAML==5.1
