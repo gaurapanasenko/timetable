@@ -1,29 +1,39 @@
-import json, regex
+# pylint: disable=R0201
+import json
+import regex
 
 from django.utils.translation import ugettext_lazy as _
-from django.shortcuts import render, redirect
-from django.http import HttpResponse
+# from django.shortcuts import (
+    # render,
+    # redirect,
+# )
+# from django.http import HttpResponse
 from django.contrib import admin
-from django.urls import path, reverse
+from django.urls import (
+    # path,
+    reverse,
+)
 from django.db.models import Q
 from django.template.defaultfilters import escape
 from django.utils.safestring import mark_safe
 
 from import_export.admin import ImportExportModelAdmin
-from mptt.admin import MPTTModelAdmin
-from mptt.forms import TreeNodeChoiceField
+# from mptt.admin import MPTTModelAdmin
+# from mptt.forms import TreeNodeChoiceField
 from django_improvements.admin import (
-    AdminBaseWithSelectRelated,
-    AdminInlineWithSelectRelated,
-    AdminStackedInlineWithSelectRelated,
+    # AdminBaseWithSelectRelated,
+    # AdminInlineWithSelectRelated,
+    # AdminStackedInlineWithSelectRelated,
     AdminWithSelectRelated,
-    FilterWithSelectRelated,
+    # FilterWithSelectRelated,
 )
 from admin_auto_filters.filters import AutocompleteFilter
 
-from .settings import *
+from timetableapp.settings import (
+    LIST_PER_PAGE, current_year, START_YEAR,
+)
 
-from .models import (
+from timetableapp.models import (
     Faculty,
     Department,
     Subject,
@@ -34,28 +44,19 @@ from .models import (
     FormOfStudySemester,
     GroupStream,
     Group,
+    SubGroup,
     Building,
     Classroom,
     Curriculum,
-    CurriculumRecord,
-    TimetableRecording
+    CurriculumRecordingTimings,
+    Lesson,
+    TimeTableRecording,
 )
 
-from .forms import (
+from timetableapp.forms import (
     FormOfStudySemesterFormset,
     CurriculumForm,
 )
-
-def generate_list_select_related_for_group(prefix, parent, list_select):
-    arr = []
-    for i in range(0, MAX_GROUP_TREE_HEIGHT):
-        if i > 0:
-            t = [prefix] + [parent for i in range(i)]
-            arr.append('__'.join(filter(None, t)))
-        for j in list_select:
-            t = [prefix] + [parent for i in range(i)] + [j]
-            arr.append('__'.join(filter(None, t)))
-    return arr
 
 class DepartmentInline(admin.TabularInline):
     model = Department
@@ -93,8 +94,8 @@ class DepartmentAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
 
     def faculty_link(self, obj=None):
         if obj and obj.faculty_id:
-            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_faculty_change", args=(obj.faculty_id,)) , escape(obj.faculty)))
-        else: return '-'
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_faculty_change", args=(obj.faculty_id,)), escape(obj.faculty)))
+        return '-'
     faculty_link.short_description = _("faculty")
     faculty_link.admin_order_field = 'faculty'
 
@@ -112,8 +113,8 @@ class SubjectAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
 
     def department_link(self, obj=None):
         if obj and obj.department_id:
-            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_department_change", args=(obj.department_id,)) , escape(obj.department)))
-        else: return '-'
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_department_change", args=(obj.department_id,)), escape(obj.department)))
+        return '-'
     department_link.short_description = _("department")
     department_link.admin_order_field = 'department'
 
@@ -131,7 +132,7 @@ class TeacherAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     list_filter = ('department__faculty',)
     list_per_page = LIST_PER_PAGE
     list_select_related = ('person', 'department', )
-    autocomplete_fields = ('department',)
+    autocomplete_fields = ('person', 'department',)
     search_fields = (
         'person__first_name', 'person__middle_name',
         'person__last_name',
@@ -141,23 +142,23 @@ class TeacherAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
 
     def person_link(self, obj=None):
         if obj and obj.person_id:
-            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_person_change", args=(obj.person_id,)) , escape(obj.person)))
-        else: return '-'
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_person_change", args=(obj.person_id,)), escape(obj.person)))
+        return '-'
     person_link.short_description = _("person")
     person_link.admin_order_field = 'person'
 
     def department_link(self, obj=None):
         if obj and obj.department_id:
-            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_department_change", args=(obj.department_id,)) , escape(obj.department)))
-        else: return '-'
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_department_change", args=(obj.department_id,)), escape(obj.department)))
+        return '-'
     department_link.short_description = _("department")
     department_link.admin_order_field = 'department'
 
     def get_search_results(self, request, queryset, search_term):
         queryset, use_distinct = super().get_search_results(request, queryset, search_term)
-        p = request.path.find('/autocomplete') != -1
-        f = 'filter' in request.GET
-        if request.is_ajax() and p and f:
+        have_path = request.path.find('/autocomplete') != -1
+        filt = 'filter' in request.GET
+        if request.is_ajax() and have_path and filt:
             filter_dict = json.loads(request.GET['filter'])
             queryset = queryset.filter(**filter_dict)
         return queryset, use_distinct
@@ -184,8 +185,8 @@ class SpecialtyAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
 
     def faculty_link(self, obj=None):
         if obj and obj.faculty_id:
-            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_faculty_change", args=(obj.faculty_id,)) , escape(obj.faculty)))
-        else: return '-'
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_faculty_change", args=(obj.faculty_id,)), escape(obj.faculty)))
+        return '-'
     faculty_link.short_description = _("faculty")
     faculty_link.admin_order_field = 'faculty'
 
@@ -207,12 +208,12 @@ class ClassroomAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     list_filter = ('building',)
     list_per_page = LIST_PER_PAGE
     list_select_related = ('building',)
-    search_fields = ('number',)
+    search_fields = ('building', 'number',)
 
     def building_link(self, obj=None):
         if obj and obj.building_id:
-            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_building_change", args=(obj.building_id,)) , escape(obj.building)))
-        else: return '-'
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_building_change", args=(obj.building_id,)), escape(obj.building)))
+        return '-'
     building_link.short_description = _("building")
     building_link.admin_order_field = 'building'
 
@@ -222,7 +223,7 @@ class FormOfStudySemesterInline(admin.TabularInline):
 
 @admin.register(FormOfStudy)
 class FormOfStudyAdmin(ImportExportModelAdmin):
-    inlines = [FormOfStudySemesterInline,]
+    inlines = [FormOfStudySemesterInline, GroupStreamInline, ]
     list_display = ('name', 'suffix', 'semesters', 'priority',)
     list_filter = ('semesters', 'priority',)
     list_per_page = LIST_PER_PAGE
@@ -248,29 +249,35 @@ class YearFilter(admin.SimpleListFilter):
             years = self.value().split('-')
             if len(years) == 2:
                 try:
-                    fp = self.year_field_path
+                    field_path = self.year_field_path
                     args = {
-                        '%syear__gte' % fp: int(years[0]),
-                        '%syear__lte' % fp: int(years[1]),
+                        '%syear__gte' % field_path: int(years[0]),
+                        '%syear__lte' % field_path: int(years[1]),
                     }
                     return queryset.filter(**args)
-                except ValueError: pass
+                except ValueError:
+                    pass
+        return None
 
 class CurriculumInline(admin.TabularInline):
     model = Curriculum
     form = CurriculumForm
     show_change_link = True
 
+class GroupInline(admin.TabularInline):
+    model = Group
+    show_change_link = True
+
 @admin.register(GroupStream)
 class GroupStreamAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
-    inlines = [
-        CurriculumInline,
-    ]
+    inlines = (
+        CurriculumInline, GroupInline,
+    )
     list_display = ('__str__', 'specialty_link', 'year', 'form_link',)
     list_filter = ('specialty__faculty', YearFilter, 'form',)
     list_per_page = LIST_PER_PAGE
     list_select_related = ('specialty', 'form')
-    autocomplete_fields = ('specialty',)
+    autocomplete_fields = ('specialty', 'form')
     search_fields = (
         'specialty__name', 'specialty__number',
         'specialty__abbreviation', 'year'
@@ -278,75 +285,69 @@ class GroupStreamAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
 
     def specialty_link(self, obj=None):
         if obj and obj.specialty_id:
-            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_specialty_change", args=(obj.specialty_id,)) , escape(obj.specialty)))
-        else: return '-'
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_specialty_change", args=(obj.specialty_id,)), escape(obj.specialty)))
+        return '-'
     specialty_link.short_description = _("specialty")
     specialty_link.admin_order_field = 'specialty'
 
     def form_link(self, obj=None):
         if obj and obj.form_id:
-            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_formofstudy_change", args=(obj.form_id,)) , escape(obj.form)))
-        else: return '-'
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_formofstudy_change", args=(obj.form_id,)), escape(obj.form)))
+        return '-'
     form_link.short_description = _("form")
     form_link.admin_order_field = 'form'
 
     def get_search_results(self, request, queryset, search_term):
         filter_q = Q()
         reg = regex.compile(r"^(\p{L}+?)-((\d)((\d)(\p{L}*?)([0-9-]*))?)?$", regex.IGNORECASE)
-        st = ""
-        mgth = MAX_GROUP_TREE_HEIGHT
+        tail = ""
         for i in search_term.split(' '):
             if reg.match(i):
-                g = reg.search(i)
+                group = reg.search(i)
                 filter_dict = {
-                    'specialty__abbreviation__exact': g.group(1),
+                    'specialty__abbreviation__exact': group.group(1),
                 }
-                if g.group(3):
-                    y = str(g.group(3))
-                    if g.group(5): y += str(g.group(5))
-                    filter_dict['year__contains'] = y
-                if g.group(6):
-                    filter_dict['form__suffix'] = g.group(6)
+                if group.group(3):
+                    year = str(group.group(3))
+                    if group.group(5):
+                        year += str(group.group(5))
+                    filter_dict['year__contains'] = year
+                if group.group(6):
+                    filter_dict['form__suffix'] = group.group(6)
                 filter_q = filter_q | Q(**filter_dict)
             else:
-                st += " " + i
-        queryset, use_distinct = super().get_search_results(request, queryset, st)
+                tail += " " + i
+        queryset, use_distinct = super().get_search_results(request, queryset, tail)
         if filter_q:
             queryset = queryset.filter(filter_q)
         return queryset, use_distinct
 
-class GroupInline(AdminInlineWithSelectRelated):
-    model = Group
-    exclude = ['group_stream',]
-    list_select_related = generate_list_select_related_for_group(
-        '', 'parent', (
-            'group_stream',
-            'group_stream__specialty',
-            'group_stream__form',
-        )
-    )
-    show_change_link = True
-
 class GroupStreamYearFilter(YearFilter):
     year_field_path = 'group_stream__'
 
+class SubGroupInline(admin.TabularInline):
+    model = SubGroup
+    show_change_link = True
+
+class CurriculumRecordingTimingsInline(admin.StackedInline):
+    model = CurriculumRecordingTimings
+    show_change_link = True
+
 @admin.register(Group)
-class GroupAdmin(AdminWithSelectRelated, MPTTModelAdmin, ImportExportModelAdmin):
+class GroupAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     list_display = ('__str__', 'group_stream_link',)
-    inlines = [GroupInline,]
+    inlines = (SubGroupInline, CurriculumRecordingTimingsInline)
     list_filter = (
         'group_stream__specialty__faculty', GroupStreamYearFilter,
         'group_stream__form',
     )
     list_per_page = LIST_PER_PAGE
-    list_select_related = generate_list_select_related_for_group(
-        '', 'parent', (
-            'group_stream',
-            'group_stream__specialty',
-            'group_stream__form',
-        )
+    list_select_related = (
+        'group_stream',
+        'group_stream__specialty',
+        'group_stream__form',
     )
-    autocomplete_fields = ('group_stream', 'parent',)
+    autocomplete_fields = ('group_stream',)
     search_fields = (
         'group_stream__specialty__name',
         'group_stream__specialty__number',
@@ -358,309 +359,291 @@ class GroupAdmin(AdminWithSelectRelated, MPTTModelAdmin, ImportExportModelAdmin)
     def group_stream_link(self, obj=None):
         if obj and obj.group_stream_id:
             return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_groupstream_change", args=(obj.group_stream_id,)), escape(obj.group_stream)))
-        else: return '-'
+        return '-'
     group_stream_link.short_description = _("group stream")
     group_stream_link.admin_order_field = 'group_stream'
 
-    def parent_link(self, obj=None):
-        if obj and obj.parent_id:
-            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_group_change", args=(obj.parent_id,)), escape(obj.parent)))
-        else: return '-'
-    parent_link.short_description = _("parent node")
-    parent_link.admin_order_field = 'parent'
-
     def get_readonly_fields(self, request, obj=None):
-        if obj: return [
-            'group_stream_link', 'parent_link', 'group_stream', 'parent',
-        ]
-        else: return []
+        if obj:
+            return ('group_stream_link', )
+        return tuple()
 
     def get_search_results(self, request, queryset, search_term):
-        prefix = ''
         filter_q = Q()
-        reg = regex.compile(r"^(\p{L}+?)-((\d)((\d)(\p{L}*?)([0-9-]*))?)?$", regex.IGNORECASE)
-        st = ""
-        mgth = MAX_GROUP_TREE_HEIGHT
         for i in search_term.split(' '):
-            if reg.match(i):
-                g = reg.search(i)
-                filter_dict = {
-                    'group_stream__specialty__abbreviation__exact': g.group(1),
-                }
-                if g.group(3):
-                    y = str(g.group(3))
-                    if g.group(5): y += str(g.group(5))
-                    filter_dict['group_stream__year__contains'] = y
-                if g.group(6):
-                    filter_dict['group_stream__form__suffix'] = g.group(6)
-                elif g.group(7) and g.group(7)[0] == '-':
-                    filter_dict['group_stream__form__suffix'] = ''
-                filter_qq = Q()
-                if g.group(7) and len(g.group(7)) > 1 and g.group(7)[0] == '-':
-                    s = []
-                    for i in g.group(7)[1:].split('-'):
-                        if i: s.append(i)
-                        else: break
-                    if s:
-                        r = mgth - len(s)
-                        for i in range(0, r + 1):
-                            fd = {
-                                '%s__isnull' % ('__parent' * (mgth - i + 1))[2:]: True,
-                            }
-                            for j in range(0, len(s)):
-                                fd['%snumber__exact' % ('parent__' * (mgth - j - i - 1))] = s[j]
-                            filter_qq = filter_qq | Q(**fd)
-                filter_q = filter_q | Q(filter_qq, **filter_dict)
-            else:
-                st += " " + i
-        queryset, use_distinct = super().get_search_results(request, queryset, st)
+            for j in i.split('-'):
+                if j:
+                    filter_qq = (
+                        Q(group_stream__specialty__abbreviation__icontains=j) |
+                        Q(group_stream__form__suffix__icontains=j) |
+                        Q(group_stream__year__icontains=j) |
+                        Q(number__icontains=j)
+                    )
+                    filter_q = (
+                        filter_q & filter_qq
+                    )
+        queryset, use_distinct = super().get_search_results(request, queryset, "")
         if filter_q:
             queryset = queryset.filter(filter_q)
-        p = request.path.find('/autocomplete') != -1
-        f = 'filter' in request.GET
-        if request.is_ajax() and p and f:
+        have_path = request.path.find('/autocomplete') != -1
+        filt = 'filter' in request.GET
+        if request.is_ajax() and have_path and filt:
             filter_dict = json.loads(request.GET['filter'])
             queryset = queryset.filter(**filter_dict)
         return queryset, use_distinct
 
-class CurriculumRecordInline(AdminStackedInlineWithSelectRelated):
-    model = CurriculumRecord
-    autocomplete_fields = ('group', 'subjects',)
-    list_select_related =  generate_list_select_related_for_group(
-        'group', 'parent', (
-            'group_stream',
-            'group_stream__specialty',
-            'group_stream__form',
-        )
-    ) + [
-        'curriculum',
-        'curriculum__group__specialty',
-        'curriculum__group__form',
-    ]
+class LessonInline(admin.StackedInline):
+    model = Lesson
     show_change_link = True
+
+class GroupGroupStreamYearFilter(YearFilter):
+    year_field_path = 'group__group_stream__'
+
+@admin.register(SubGroup)
+class SubGroupAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
+    list_display = ('__str__', 'group_link', 'group_group_stream_link',)
+    inlines = (LessonInline,)
+    list_filter = (
+        'group__group_stream__specialty__faculty',
+        GroupGroupStreamYearFilter,
+        'group__group_stream__form',
+    )
+    list_per_page = LIST_PER_PAGE
+    list_select_related = (
+        'group__group_stream',
+        'group__group_stream__specialty',
+        'group__group_stream__form',
+    )
+    autocomplete_fields = ('group',)
+    search_fields = (
+        'group__group_stream__specialty__name',
+        'group__group_stream__specialty__number',
+        'group__group_stream__specialty__abbreviation',
+        'group__group_stream__year',
+        'group__number',
+    )
+
+    def group_group_stream_link(self, obj=None):
+        if obj and obj.group.group_stream_id:
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_groupstream_change", args=(obj.group.group_stream_id,)), escape(obj.group.group_stream)))
+        return '-'
+    group_group_stream_link.short_description = _("group stream")
+    group_group_stream_link.admin_order_field = 'group__group_stream'
+
+    def group_link(self, obj=None):
+        if obj and obj.group_id:
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_group_change", args=(obj.group_id,)), escape(obj.group)))
+        return '-'
+    group_link.short_description = _("group")
+    group_link.admin_order_field = 'group'
+
 
 class GroupYearFilter(YearFilter):
     year_field_path = 'group__'
 
 class CurriculumGroupStreamFilter(AutocompleteFilter):
     title = 'Group stream'
-    field_name = 'group'
+    field_name = 'group_stream'
 
 @admin.register(Curriculum)
 class CurriculumAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
-    inlines = [
-        CurriculumRecordInline,
-    ]
-    list_display = ('__str__', 'group_link', 'semester',)
+    list_display = ('__str__', 'group_stream_link', 'semester',)
     list_filter = (
-        'group__specialty__faculty', GroupYearFilter,
-        'group__form', 'semester', CurriculumGroupStreamFilter,
+        'group_stream__specialty__faculty', GroupYearFilter,
+        'group_stream__form', 'semester', CurriculumGroupStreamFilter,
     )
     list_per_page = LIST_PER_PAGE
     list_select_related = [
-        'group',
-        'group__specialty',
-        'group__form',
+        'group_stream',
+        'group_stream__specialty',
+        'group_stream__form',
     ]
-    autocomplete_fields = ('group',)
+    autocomplete_fields = ('group_stream',)
     search_fields = (
-        'group__specialty__name', 'group__specialty__number',
-        'group__specialty__abbreviation', 'group__year',
+        'group_stream__specialty__name', 'group_stream__specialty__number',
+        'group_stream__specialty__abbreviation', 'group_stream__year',
     )
 
-    def group_link(self, obj=None):
-        if obj and obj.group_id:
-            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_groupstream_change", args=(obj.group_id,)) , escape(obj.group)))
-        else: return '-'
-    group_link.short_description = _("group stream")
-    group_link.admin_order_field = 'group'
+    def group_stream_link(self, obj=None):
+        if obj and obj.group_stream_id:
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_groupstream_change", args=(obj.group_stream_id,)), escape(obj.group_stream)))
+        return '-'
+    group_stream_link.short_description = _("group stream")
+    group_stream_link.admin_order_field = 'group_stream'
 
     class Media:
         pass
 
-class CurriculumRecordTeacherInline(admin.StackedInline):
-    model = CurriculumRecord.teachers.through
-    autocomplete_fields = ('group', 'teacher',)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        obj = request._obj_
-        field = super().formfield_for_foreignkey(db_field, request, **kwargs)
-        if db_field.name == "group":
-            if obj is not None:
-                filter_dict = {
-                    'group_stream__exact': obj.group.group_stream_id,
-                }
-                field.widget.attrs['data-filter'] = json.dumps(filter_dict)
-                field.queryset = field.queryset.filter(**filter_dict)
-            else:
-                filter_dict = {'group_stream__exact': 0}
-                field.widget.attrs['data-filter'] = json.dumps(filter_dict)
-                field.queryset = field.queryset.none()
-        if db_field.name == "teacher":
-            if obj is not None:
-                departments = [i.department_id for i in obj.subjects.all()]
-                filter_dict = {'department__in': departments}
-                field.widget.attrs['data-filter'] = json.dumps(filter_dict)
-                field.queryset = field.queryset.filter(**filter_dict)
-            else:
-                filter_dict = {'department__in': 0}
-                field.widget.attrs['data-filter'] = json.dumps(filter_dict)
-                field.queryset = field.queryset.none()
-        return field
+@admin.register(CurriculumRecordingTimings)
+class CurriculumRecordingTimingsAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
+    list_display = (
+        '__str__', 'group_link', 'semester', 'subjects_list', 'lectures',
+        'practices', 'laboratory', 'independent_work',
+    )
+    list_filter = (
+        'group__group_stream__specialty__faculty', GroupGroupStreamYearFilter,
+        'group__group_stream__form', 'semester',
+    )
+    list_per_page = LIST_PER_PAGE
+    list_select_related = (
+        'group__group_stream',
+        'group__group_stream__specialty',
+        'group__group_stream__form',
+    )
+    autocomplete_fields = ('group',)
+    search_fields = (
+        'group__group_stream__specialty__name',
+        'group__group_stream__specialty__number',
+        'group__group_stream__specialty__abbreviation',
+        'group__group_stream__year',
+        'group__number',
+        'semester',
+    )
+
+    def subjects_list(self, obj=None):
+        if obj:
+            return obj.get_subject_name()
+        return '-'
+    subjects_list.short_description = _("subjects")
+    subjects_list.admin_order_field = 'subjects'
+
+    def group_link(self, obj=None):
+        if obj and obj.group_id:
+            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_group_change", args=(obj.group_id,)), escape(obj.group)))
+        return '-'
+    group_link.short_description = _("group")
+    group_link.admin_order_field = 'group'
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return ('group_link', )
+        return tuple()
+
+
+class TeacherFilter(AutocompleteFilter):
+    title = 'Teacher'
+    field_name = 'teacher'
+
+
+@admin.register(Lesson)
+class LessonAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
+    list_display = (
+        'pk', 'subgroup', 'semester', 'subject', 'lesson', 'teacher',
+    )
+    list_filter = (
+        'subgroup__group__group_stream__specialty__faculty',
+        'subgroup__group__group_stream__form',
+        'semester', 'lesson', TeacherFilter
+    )
+    list_per_page = LIST_PER_PAGE
+    list_select_related = (
+        'subject',
+        'subgroup',
+        'subgroup__group',
+        'subgroup__group__group_stream',
+        'subgroup__group__group_stream__specialty',
+        'subgroup__group__group_stream__form',
+    )
+    autocomplete_fields = ('subgroup',)
+    search_fields = (
+        'subgroup__group__group_stream__specialty__name',
+        'subgroup__group__group_stream__specialty__number',
+        'subgroup__group__group_stream__specialty__abbreviation',
+        'subgroup__group__group_stream__year',
+        'subgroup__group__number',
+    )
+
+    class Media:
+        pass
+
 
 class CurriculumRecordCurriculumGroupFilter(AutocompleteFilter):
     title = _('group stream')
     field_name = 'curriculum__group'
 
-@admin.register(CurriculumRecord)
-class CurriculumRecordAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
-    list_display = (
-        '__str__', 'group_link', 'get_semester', 'subjects_link',
-        'lectures', 'practices', 'laboratory', 'independent_work',
-    )
-    list_filter = (
-        'curriculum__semester',
-        CurriculumRecordCurriculumGroupFilter,
-    )
-    list_per_page = LIST_PER_PAGE
-    list_select_related = generate_list_select_related_for_group(
-        'group', 'parent', (
-            'group_stream',
-            'group_stream__specialty',
-            'group_stream__form',
-        )
-    ) + [
-        'curriculum',
-        'curriculum__group__specialty',
-        'curriculum__group__form',
-    ]
-    autocomplete_fields = ('curriculum', 'group', 'subjects', )
-    search_fields = (
-        'curriculum__group__specialty__name',
-        'curriculum__group__specialty__number',
-        'curriculum__group__specialty__abbreviation',
-        'curriculum__group__year',
-        'subjects__name',
-    )
 
-    def curriculum_link(self, obj=None):
-        if obj and obj.curriculum_id:
-            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_curriculum_change", args=(obj.curriculum_id,)) , escape(obj.curriculum)))
-        else: return '-'
-    curriculum_link.short_description = _("curriculum")
-    curriculum_link.admin_order_field = 'curriculum'
+class TimeTableRecordingLessonFilter(AutocompleteFilter):
+    title = _('lesson')
+    field_name = 'lesson'
 
-    def group_link(self, obj=None):
-        if obj and obj.group_id:
-            return mark_safe('<a href="%s">%s</a>' % (reverse("admin:timetableapp_group_change", args=(obj.group_id,)) , escape(obj.group)))
-        else: return '-'
-    group_link.short_description = _("group")
-    group_link.admin_order_field = 'group'
 
-    def subjects_link(self, obj=None):
-        if obj and obj.subjects.exists():
-            s = []
-            for i in obj.subjects.all():
-                mst = (reverse("admin:timetableapp_subject_change", args=(i.id,)) , escape(i))
-                s.append('<a href="%s">%s</a>' % mst)
-            return mark_safe(" / ".join(s))
-        else: return '-'
-    subjects_link.short_description = _("subjects")
-
-    def get_semester(self, obj):
-        return obj.curriculum.semester
-    get_semester.short_description = _("semester")
-    get_semester.admin_order_field = 'curriculum__semester'
-
-    def get_inline_instances(self, request, obj=None):
-        if obj:
-            return [CurriculumRecordTeacherInline(self.model, self.admin_site)]
-        else: return []
-
-    def get_readonly_fields(self, request, obj=None):
-        if obj: return [
-            'curriculum_link', 'group_link', 'curriculum', 'group',
-        ]
-        else: return []
-
-    def get_form(self, request, obj=None, **kwargs):
-        request._obj_ = obj
-        return super(CurriculumRecordAdmin, self).get_form(request, obj, **kwargs)
-
-    def lookup_allowed(self, key, *args, **kwargs):
-        if key  == 'curriculum__group__id__exact':
-            return True
-        return super(CurriculumRecordAdmin, self).lookup_allowed(key,  *args, **kwargs)
-
-    class Media:
-        pass
-
-class TimetableRecordingGroupFilter(AutocompleteFilter):
-    title = _('group')
-    field_name = 'group'
+class TimeTableRecordingSubGroupFilter(AutocompleteFilter):
+    title = _('subgroup')
+    field_name = 'lesson__subgroup'
 
     def queryset(self, request, queryset):
         if self.value():
-            g = Group.objects.filter(pk=self.value()).first()
-            args = {
-                'group__lft__gte': g.lft,
-                'group__rght__lte': g.rght,
-            }
-            return queryset.filter(**args)
+            queryset = SubGroup.objects.filter(pk=self.value())
+            subgroup = queryset.first()
+            if subgroup.is_union():
+                queryset = SubGroup.objects.filter(group=subgroup.group)
+            return queryset
+        return None
 
-class TimetableRecordingClassroomFilter(AutocompleteFilter):
+class TimeTableRecordingClassroomFilter(AutocompleteFilter):
     title = _('classroom')
     field_name = 'classroom'
 
-class TimetableRecordingTeacherFilter(AutocompleteFilter):
+class TimeTableRecordingTeacherFilter(AutocompleteFilter):
     title = _('teacher')
     field_name = 'teacher'
 
-@admin.register(TimetableRecording)
-class TimetableRecordingAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
+@admin.register(TimeTableRecording)
+class TimeTableRecordingAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     list_display = (
-        'group', 'get_semester', 'subjects_link', 'lesson',
+        'pk', 'get_semester', 'subjects_link', 'lesson_link',
         'classroom', 'teacher',
         'start_date', 'end_date',
     )
     list_filter = (
-        'record__curriculum__semester',
-        TimetableRecordingGroupFilter,
-        TimetableRecordingClassroomFilter,
-        TimetableRecordingTeacherFilter,
+        TimeTableRecordingLessonFilter,
+        TimeTableRecordingSubGroupFilter,
+        TimeTableRecordingClassroomFilter,
+        TimeTableRecordingTeacherFilter,
+        'lesson__semester',
     )
     list_per_page = LIST_PER_PAGE
-    list_select_related = generate_list_select_related_for_group(
-        'group', 'parent', (
-            'group_stream',
-            'group_stream__specialty',
-            'group_stream__form',
-        )
-    ) + [
-        'record__curriculum',
-        'record__curriculum__group__specialty',
-        'record__curriculum__group__form',
+    list_select_related = (
+        'lesson',
+        'lesson__subgroup',
+        'lesson__subgroup__group',
+        'lesson__subgroup__group__group_stream',
+        'lesson__subgroup__group__group_stream__specialty',
+        'lesson__subgroup__group__group_stream__specialty__faculty',
         'classroom',
         'classroom__building',
         'teacher',
         'teacher__person',
-    ]
-    autocomplete_fields = ('record', 'group', 'classroom', 'teacher',)
+    )
+    autocomplete_fields = ('classroom', 'teacher',)
 
     def get_semester(self, obj):
-        return obj.record.curriculum.semester
+        return obj.lesson.semester
     get_semester.short_description = _("semester")
-    get_semester.admin_order_field = 'record__curriculum__semester'
+    get_semester.admin_order_field = 'lesson__semester'
 
     def subjects_link(self, obj=None):
-        if obj and obj.record.subjects.exists():
-            s = []
-            for i in obj.record.subjects.all():
-                mst = (reverse("admin:timetableapp_subject_change", args=(i.id,)) , escape(i.name))
-                s.append('<a href="%s">%s</a>' % mst)
-            return mark_safe(" / <br>".join(s))
-        else: return '-'
-    subjects_link.short_description = _("subjects")
+        if obj and obj.lesson.subject_id:
+            subject = obj.lesson.subject
+            return mark_safe('<a href="%s">%s</a>' % (
+                reverse("admin:timetableapp_subject_change", args=(subject.pk,)),
+                escape(subject.name),
+            ))
+        return '-'
+    subjects_link.short_description = _("subject")
+    subjects_link.admin_order_field = 'lesson__subject'
+
+    def lesson_link(self, obj=None):
+        if obj and obj.lesson_id:
+            lesson = obj.lesson
+            return mark_safe('<a href="%s">%s</a>' % (
+                reverse("admin:timetableapp_lesson_change", args=(lesson.pk,)),
+                escape(str(lesson)),
+            ))
+        return '-'
+    lesson_link.short_description = _("lesson")
+    lesson_link.admin_order_field = 'lesson'
 
     class Media:
         pass

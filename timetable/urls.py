@@ -19,5 +19,6 @@ import debug_toolbar
 
 urlpatterns = [
     path('__debug__/', include(debug_toolbar.urls)),
-    path('', admin.site.urls),
+    path('timetableapp/', include('timetableapp.urls')),
+    path('admin/', admin.site.urls),
 ]

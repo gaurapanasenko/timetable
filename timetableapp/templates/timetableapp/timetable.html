@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+
+  <title>Timetable</title>
+  <meta name="description" content="Timetable">
+</head>
+<body>
+    <h1>Timetable</h1>
+    <table>
+        {% for i in lesson_field.day_choices %}
+            <tr>{{ i }}
+        {% endfor %}
+    </table>
+</body>
+</html>

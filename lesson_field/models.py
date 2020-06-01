@@ -2,8 +2,13 @@ from django.db import models
 
 from .helpers import Lesson
 from . import forms
+from .settings import WEEK_CHOICES, DAY_CHOICES, LESSON_CHOICES
 
 class LessonField(models.Field):
+    week_choices = WEEK_CHOICES
+    day_choices = DAY_CHOICES
+    lesson_choices = LESSON_CHOICES
+
     def to_python(self, value):
         if isinstance(value, Lesson):
             return value
