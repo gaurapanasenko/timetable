@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-05-04 15:39+0300\n"
+"POT-Creation-Date: 2020-06-02 17:12+0000\n"
 "PO-Revision-Date: 2019-05-04 14:22+0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -21,26 +21,36 @@ msgstr ""
 "(n % 100 >=11 && n % 100 <=14 )) ? 2: 3);\n"
 "X-Generator: Poedit 1.8.11\n"
 
-#: models.py:44
-msgid "{} fields can't be changed when {} exists."
-msgstr "{} поля не можуть бути змінені коли існують {}."
-
-#: models.py:46 models.py:48
-msgid " and "
-msgstr " та "
-
-#: templates/admin/edit_inline/tabular.html:20
-msgid "Delete?"
-msgstr "Видалити?"
-
-#: templates/admin/edit_inline/tabular.html:34
+#: admin_templates/templates/admin/edit_inline/tabular.html:17
+#: admin_templates/templates/admin/edit_inline/tabular.html:66
+#: admin_templates/templates/admin/edit_inline/tabular_old.html:34
 msgid "Change"
 msgstr "Змінити"
 
-#: templates/admin/edit_inline/tabular.html:34
+#: admin_templates/templates/admin/edit_inline/tabular.html:18
+#: admin_templates/templates/admin/edit_inline/tabular_old.html:20
+msgid "Delete?"
+msgstr "Видалити?"
+
+#: admin_templates/templates/admin/edit_inline/tabular.html:126
+#, python-format
+msgid "Add another %(verbose_name)s"
+msgstr ""
+
+#: admin_templates/templates/admin/edit_inline/tabular.html:129
+msgid "Remove"
+msgstr ""
+
+#: admin_templates/templates/admin/edit_inline/tabular_old.html:34
 msgid "View"
 msgstr "Переглянути"
 
-#: templates/admin/edit_inline/tabular.html:36
+#: admin_templates/templates/admin/edit_inline/tabular_old.html:36
 msgid "View on site"
 msgstr "Переглянути на сайті"
+
+#~ msgid "{} fields can't be changed when {} exists."
+#~ msgstr "{} поля не можуть бути змінені коли існують {}."
+
+#~ msgid " and "
+#~ msgstr " та "

@@ -1,7 +1,5 @@
-import datetime
 import math
 from collections import defaultdict
-from itertools import accumulate
 
 from django.http import HttpResponse
 from django.template.loader import render_to_string
@@ -9,7 +7,7 @@ from django.template.loader import render_to_string
 from lesson_field import settings as lesson_settings
 from lesson_field.settings import DAY_NAMES, MAX_LESSONS_DAY, SHORT_WEEK_NAMES
 
-from .models import TimeTableRecording, SubGroup, Lesson
+from .models import TimeTableRecording, Lesson
 
 
 DAY_ROWS = 2 * lesson_settings.MAX_LESSONS_DAY
@@ -17,7 +15,8 @@ WEEK_ROWS = DAY_ROWS * len(lesson_settings.WORK_DAYS)
 
 
 def get_row(week, day, lesson):
-    return  DAY_ROWS * day + 2 * (lesson - 1) + week + 2
+    return DAY_ROWS * day + 2 * (lesson - 1) + week + 2
+
 
 def gen_cell(data, rowspan=1, colspan=1, width="100px"):
     return (rowspan, colspan, data, width)
@@ -30,9 +29,11 @@ def lcm(a, b):
 def default_group_data():
     return ({1}, 1)
 
+
 def accum_groups(elem, acc):
     elem[1]["position"] += acc[1]['max_width']
     return elem
+
 
 def current_datetime(request, group_stream, semester):
     ttrs = list(TimeTableRecording.objects.filter(
@@ -47,6 +48,11 @@ def current_datetime(request, group_stream, semester):
         'lesson__subgroup__group__group_stream',
         'lesson__subgroup__group__group_stream__specialty',
         'lesson__subgroup__group__group_stream__form',
+        'teacher',
+        'teacher__person',
+        'teacher__department',
+        'classroom',
+        'classroom__building',
     ).order_by(
         'lesson__subgroup__numerator',
         'lesson__subgroup__denominator',
@@ -106,7 +112,6 @@ def current_datetime(request, group_stream, semester):
         out_pos = group_pos[group] * max_colspan if group in group_pos else 0
         inner_pos = max_colspan // denominator * numerator if denominator else 0
         pos = out_pos + inner_pos - 1
-        print(out_pos, inner_pos, posl[row], bin(week), max_colspan, denominator, colspan)
         if week == 0b11:
             diff = pos - posl[row]
             if diff > 0:
@@ -150,7 +155,6 @@ def current_datetime(request, group_stream, semester):
             data[row].append(gen_cell("", rows, diff))
             for i in range(rows):
                 posl[row + i] += diff
-
 
     return HttpResponse(render_to_string('timetableapp/timetable.html', {
         'data': data,

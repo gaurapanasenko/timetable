@@ -48,7 +48,7 @@ from timetableapp.models import (
     Building,
     Classroom,
     Curriculum,
-    CurriculumRecordingTimings,
+    CurriculumRecording,
     Lesson,
     TimeTableRecording,
 )
@@ -476,8 +476,8 @@ class CurriculumAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
         pass
 
 
-@admin.register(CurriculumRecordingTimings)
-class CurriculumRecordingTimingsAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
+@admin.register(CurriculumRecording)
+class CurriculumRecordingAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     list_display = (
         '__str__', 'group_link', 'semester', 'subjects_list', 'lectures',
         'practices', 'laboratory', 'independent_work',
