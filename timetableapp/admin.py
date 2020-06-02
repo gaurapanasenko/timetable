@@ -23,7 +23,7 @@ from import_export.admin import ImportExportModelAdmin
 from django_improvements.admin import (
     # AdminBaseWithSelectRelated,
     # AdminInlineWithSelectRelated,
-    # AdminStackedInlineWithSelectRelated,
+    AdminStackedInlineWithSelectRelated,
     AdminWithSelectRelated,
     # FilterWithSelectRelated,
 )
@@ -329,14 +329,11 @@ class SubGroupInline(admin.TabularInline):
     model = SubGroup
     show_change_link = True
 
-class CurriculumRecordingTimingsInline(admin.StackedInline):
-    model = CurriculumRecordingTimings
-    show_change_link = True
 
 @admin.register(Group)
 class GroupAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     list_display = ('__str__', 'group_stream_link',)
-    inlines = (SubGroupInline, CurriculumRecordingTimingsInline)
+    inlines = (SubGroupInline,)
     list_filter = (
         'group_stream__specialty__faculty', GroupStreamYearFilter,
         'group_stream__form',
@@ -368,6 +365,7 @@ class GroupAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
             return ('group_stream_link', )
         return tuple()
 
+    # TODO: More smart searching in get_search_results
     def get_search_results(self, request, queryset, search_term):
         filter_q = Q()
         for i in search_term.split(' '):
@@ -392,9 +390,10 @@ class GroupAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
             queryset = queryset.filter(**filter_dict)
         return queryset, use_distinct
 
-class LessonInline(admin.StackedInline):
+class LessonInline(AdminStackedInlineWithSelectRelated, admin.StackedInline):
     model = Lesson
     show_change_link = True
+    autocomplete_fields = ('subgroup', 'subject', 'teacher',)
 
 class GroupGroupStreamYearFilter(YearFilter):
     year_field_path = 'group__group_stream__'
@@ -436,6 +435,8 @@ class SubGroupAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
         return '-'
     group_link.short_description = _("group")
     group_link.admin_order_field = 'group'
+
+    # TODO: Smart searching in get_search_results
 
 
 class GroupYearFilter(YearFilter):
@@ -526,11 +527,17 @@ class TeacherFilter(AutocompleteFilter):
     field_name = 'teacher'
 
 
+class TimeTableRecordingInline(AdminStackedInlineWithSelectRelated, admin.StackedInline):
+    model = TimeTableRecording
+    show_change_link = True
+    autocomplete_fields = ('classroom', 'teacher',)
+
 @admin.register(Lesson)
 class LessonAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     list_display = (
         'pk', 'subgroup', 'semester', 'subject', 'lesson', 'teacher',
     )
+    inlines = (TimeTableRecordingInline,)
     list_filter = (
         'subgroup__group__group_stream__specialty__faculty',
         'subgroup__group__group_stream__form',
@@ -539,13 +546,16 @@ class LessonAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
     list_per_page = LIST_PER_PAGE
     list_select_related = (
         'subject',
+        'subject__department',
         'subgroup',
         'subgroup__group',
         'subgroup__group__group_stream',
         'subgroup__group__group_stream__specialty',
         'subgroup__group__group_stream__form',
+        'teacher',
+        'teacher__person',
     )
-    autocomplete_fields = ('subgroup',)
+    autocomplete_fields = ('subgroup', 'subject', 'teacher',)
     search_fields = (
         'subgroup__group__group_stream__specialty__name',
         'subgroup__group__group_stream__specialty__number',
@@ -553,6 +563,8 @@ class LessonAdmin(AdminWithSelectRelated, ImportExportModelAdmin):
         'subgroup__group__group_stream__year',
         'subgroup__group__number',
     )
+
+    # TODO: Smart searching in get_search_results
 
     class Media:
         pass

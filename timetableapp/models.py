@@ -457,7 +457,7 @@ class SubGroup(ReadOnlyOnExistForeignKey, models.Model):
     group = models.ForeignKey(
         'Group',
         on_delete=models.CASCADE,
-        verbose_name=_('group stream'),
+        verbose_name=_('group'),
     )
     numerator = models.PositiveSmallIntegerField(
         verbose_name=_('numerator'),
@@ -487,10 +487,10 @@ class SubGroup(ReadOnlyOnExistForeignKey, models.Model):
 
     def get_conflict_subgroups(self):
         group = self.group
-        query = group.get_conflict_subgroups(self)
+        queryset = group.get_conflict_subgroups(self)
         if self.is_union():
-            return group.subgroup_set.all() + query
-        return query
+            return group.subgroup_set.all() & queryset
+        return queryset
 
     def clean(self):
         if self.group.number == 0:
@@ -646,6 +646,8 @@ class Lesson(ReadOnlyOnExistForeignKey, models.Model):
         )
     ]
 
+    # TODO: clean on techer in wrong department
+
     def get_conflicting(self):
         subgroup = self.subgroup
         conflict = subgroup.get_conflict_subgroups()
@@ -725,6 +727,7 @@ class TimeTableRecording(models.Model):
     )
 
     def validate_unique(self, exclude=None):
+        # TODO: check num/denom and both
         confliting = self.lesson.get_conflicting().values('pk')
         filt = TimeTableRecording.objects.filter(lesson__in=confliting)
         if filt.exclude(pk=self.pk).exists():
@@ -739,3 +742,7 @@ class TimeTableRecording(models.Model):
         verbose_name = _('Timetable recording object')
         verbose_name_plural = _('timetable recordings')
         unique_together = (('lesson', 'lesson_number'),)
+        ordering = [
+            'lesson__subgroup__denominator',
+            'lesson__subgroup__numerator',
+        ]

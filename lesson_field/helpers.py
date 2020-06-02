@@ -2,10 +2,13 @@ from django.utils.deconstruct import deconstructible
 from django.utils.translation import ugettext_lazy as _
 from django.utils.text import format_lazy
 
-from .settings import *
+from lesson_field import settings
+
 
 @deconstructible
-class Lesson(object):
+class Lesson:
+    settings = settings
+
     def __init__(self, value, *args, **kwargs):
         super(Lesson, self).__init__(*args, **kwargs)
         if isinstance(value, tuple):
@@ -21,33 +24,31 @@ class Lesson(object):
     def value(self):
         return self.week * 256 + self.day * 32 + self.lesson
 
-    def __getitem__(self, x):
-        return [self.week, self.day, self.lesson][x]
+    def __getitem__(self, i):
+        return [self.week, self.day, self.lesson][i]
 
     def __hash__(self):
         return hash(self.value)
 
     def __proxy__(self):
-        n = _('lesson')
-        w = WEEK_NAMES[self.week]
-        d = DAY_NAMES[self.day]
-        ln = format_lazy('{lesson} {name}', lesson=self.lesson, name=n)
-        return format_lazy('{} - {} - {}', w, d, ln)
+        return format_lazy(
+            '{} - {} - {}', settings.SHORT_WEEK_NAMES[self.week],
+            settings.SHORT_DAY_NAMES[self.day],
+            format_lazy('{lesson} {name}', lesson=self.lesson, name=_('lesson'))
+        )
 
     def __str__(self):
         return str(self.__proxy__())
 
     def __eq__(self, other):
         if isinstance(other, Lesson):
-            return (self.value == other.value)
-        else:
-            return (self.value == other)
+            return self.value == other.value
+        return self.value == other
 
     def __gt__(self, other):
         if isinstance(other, Lesson):
-            return (self.value > other.value)
-        else:
-            return (self.value > other)
+            return self.value > other.value
+        return self.value > other
 
     def __ne__(self, other):
         return not self == other

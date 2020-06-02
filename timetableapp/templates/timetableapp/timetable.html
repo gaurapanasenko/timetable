@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -8,10 +9,46 @@
 </head>
 <body>
     <h1>Timetable</h1>
-    <table>
-        {% for i in lesson_field.day_choices %}
-            <tr>{{ i }}
+    <table border=1>
+        {% for row in data %}
+            <tr>
+            {% for cell in row %}
+                <td rowspan="{{ cell.0 }}" colspan="{{ cell.1 }}" width="{{ cell.3 }}">
+                    {{ cell.2 }}
+                </td>
+            {% endfor %}
+            </tr>
         {% endfor %}
+        <!--
+        <tr><th></th><th></th><th></th><th colspan="{{ group_colspan }}">{{ group }}</th></tr>
+        <tr>
+            <th></th><th></th><th></th>
+            {% for subgroup in subgroup_range %}
+            <th colspan="{{ subgroup_colspan }}">
+                {% blocktrans %}{{ subgroup }} subgroup{% endblocktrans %}
+            </th>
+            {% endfor %}
+        </tr>
+        {% for day in lesson_settings.DAY_CHOICES %}
+        {% if day.0 %}
+            {% for lesson in lesson_settings.LESSONS_RANGE %}
+                {% for numdenom in lesson_settings.SHORT_WEEK_CHOICES %}
+                {% if numdenom.0 != '' %}
+                <tr>
+                    {% if forloop.counter == 2 %}
+                        {% if forloop.parentloop.counter == 1 %}
+                            <th rowspan="{{ day_rowspan }}">{{ day.1 }}</th>
+                        {% endif %}
+                        <th rowspan=2>{{ lesson }}</th>
+                    {% endif %}
+                    <th>{{ numdenom.1 }}<th>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            {% endfor %}
+        {% endif %}
+        {% endfor %}
+        -->
     </table>
 </body>
 </html>
