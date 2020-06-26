@@ -3,16 +3,15 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-06-02 17:12+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"POT-Creation-Date: 2020-06-05 01:52+0000\n"
+"PO-Revision-Date: 2020-06-05 04:52+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: uk\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -20,95 +19,96 @@ msgstr ""
 "11 ? 0 : n % 1 == 0 && n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % "
 "100 > 14) ? 1 : n % 1 == 0 && (n % 10 ==0 || (n % 10 >=5 && n % 10 <=9) || "
 "(n % 100 >=11 && n % 100 <=14 )) ? 2: 3);\n"
+"X-Generator: Poedit 2.3\n"
 
 #: lesson_field/forms.py:40
 msgid "Invalid day."
-msgstr ""
+msgstr "Неправильний день."
 
 #: lesson_field/forms.py:42
 msgid "Invalid lesson number."
-msgstr ""
+msgstr "Неправильний номер заняття."
 
 #: lesson_field/helpers.py:37
 msgid "lesson"
-msgstr ""
+msgstr "заняття"
 
 #: lesson_field/settings.py:8 lesson_field/settings.py:9
 msgid "----"
-msgstr ""
+msgstr "----"
 
 #: lesson_field/settings.py:8
 msgid "numerator"
-msgstr ""
+msgstr "чисельник"
 
 #: lesson_field/settings.py:8
 msgid "denominator"
-msgstr ""
+msgstr "знаменик"
 
 #: lesson_field/settings.py:8 lesson_field/settings.py:9
 msgid "both"
-msgstr ""
+msgstr "обидва"
 
 #: lesson_field/settings.py:9
 msgid "num"
-msgstr ""
+msgstr "чис"
 
 #: lesson_field/settings.py:9
 msgid "denom"
-msgstr ""
+msgstr "знам"
 
 #: lesson_field/settings.py:11
 msgid "Monday"
-msgstr ""
+msgstr "Понеділок"
 
 #: lesson_field/settings.py:11
 msgid "Tuesday"
-msgstr ""
+msgstr "Вівторок"
 
 #: lesson_field/settings.py:11
 msgid "Wednesday"
-msgstr ""
+msgstr "Середа"
 
 #: lesson_field/settings.py:11
 msgid "Thursday"
-msgstr ""
+msgstr "Четверг"
 
 #: lesson_field/settings.py:11
 msgid "Friday"
-msgstr ""
+msgstr "П'ятниця"
 
 #: lesson_field/settings.py:12
 msgid "Saturday"
-msgstr ""
+msgstr "Субота"
 
 #: lesson_field/settings.py:12
 msgid "Sunday"
-msgstr ""
+msgstr "Неділя"
 
 #: lesson_field/settings.py:15
 msgid "mon"
-msgstr ""
+msgstr "пн"
 
 #: lesson_field/settings.py:15
 msgid "tue"
-msgstr ""
+msgstr "вт"
 
 #: lesson_field/settings.py:15
 msgid "wed"
-msgstr ""
+msgstr "ср"
 
 #: lesson_field/settings.py:15
 msgid "thu"
-msgstr ""
+msgstr "чт"
 
 #: lesson_field/settings.py:15
 msgid "fri"
-msgstr ""
+msgstr "пт"
 
 #: lesson_field/settings.py:16
 msgid "sat"
-msgstr ""
+msgstr "сб"
 
 #: lesson_field/settings.py:16
 msgid "sun"
-msgstr ""
+msgstr "вс"

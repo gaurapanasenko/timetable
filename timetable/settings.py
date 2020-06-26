@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'yearlessdate.apps.YearlessdateConfig',
     'django_improvements.apps.DjangoImprovementsConfig',
     'admin_templates.apps.AdminTemplatesConfig',
+    'lesson_field',
     'suit',
     'django.contrib.admin',
     'django.contrib.auth',
